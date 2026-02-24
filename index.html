@@ -10,11 +10,16 @@ body, #gameScreen, .omikuji {
   -ms-user-select: none;
 }
 body {
-  font-family: sans-serif;
-  text-align: center;
-  background: #f0f0f0;
-  overflow: hidden;
+  margin: 0;
+  padding: 0;
+  background: #000; /* スマホアプリ風の黒背景 */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
 }
+
+
 
 /* --- モード選択画面 --- */
 #modeSelect {
@@ -28,14 +33,17 @@ button {
 
 /* --- ゲーム画面 --- */
 #gameScreen {
-  display: none;
-  position: relative;
-  width: 100%;
-  height: 100vh;
+  aspect-ratio: 9 / 17;
+  height: 90vh;              /* ← 縦を基準にする */
+  width: auto;               /* ← 横は自動計算（幅の影響を消す） */
+  max-width: 100vw;          /* ← 横が狭いデバイスでもはみ出さない */
   background: #fff;
+  position: relative;
   overflow: hidden;
-  border-top: 3px solid #aaa;
+  border-radius: 20px;       /* スマホっぽい丸角 */
 }
+
+
 
 #info {
   font-size: 24px;
@@ -139,13 +147,18 @@ function spawnOmikuji() {
   omikuji.className = "omikuji " + (isGood ? "good" : "bad");
   omikuji.textContent = isGood ? "大吉" : "大凶";
 
-  // ★ 中央40%〜60%の範囲に落とす
-  const minX = window.innerWidth * 0.3;
-  const maxX = window.innerWidth * 0.7;
+  // ★ ゲーム画面の幅・高さを取得（デバイスに依存しない）
+  const game = document.getElementById("gameScreen");
+  const rect = game.getBoundingClientRect();
+
+  // ★ 中央40%〜60%の範囲に落とす（ゲーム画面基準）
+  const minX = rect.width * 0.3;
+  const maxX = rect.width * 0.7;
+
   omikuji.style.left = (minX + Math.random() * (maxX - minX)) + "px";
   omikuji.style.top = "-60px";
 
-  document.getElementById("gameScreen").appendChild(omikuji);
+  game.appendChild(omikuji);
 
   let fallSpeed = 2 + Math.random() * 3;
 
@@ -158,47 +171,47 @@ function spawnOmikuji() {
     // ★ 皿に乗ったか判定
     if (checkPlate(omikuji, fall)) return;
 
-    if (top > window.innerHeight) {
+    // ★ ゲーム画面の高さ基準で削除
+    if (top > rect.height) {
       clearInterval(fall);
       omikuji.remove();
     }
   }, 16);
 
-  // --- 掴む処理 ---
- omikuji.onmousedown = (e) => {
-  e.preventDefault();
-  dragging = omikuji;
-  omikuji.style.cursor = "grabbing";
+  // --- 掴む処理（pointer対応） ---
+  omikuji.onpointerdown = (e) => {
+    e.preventDefault();
+    dragging = omikuji;
+    omikuji.setPointerCapture(e.pointerId);
+    omikuji.style.cursor = "grabbing";
 
-  const shiftX = e.clientX - omikuji.getBoundingClientRect().left;
-  const shiftY = e.clientY - omikuji.getBoundingClientRect().top;
+    const shiftX = e.clientX - omikuji.getBoundingClientRect().left;
+    const shiftY = e.clientY - omikuji.getBoundingClientRect().top;
 
-  function moveAt(x, y) {
-    omikuji.style.left = x - shiftX + "px";
-    omikuji.style.top = y - shiftY + "px";
-  }
+    function moveAt(x, y) {
+      omikuji.style.left = x - shiftX + "px";
+      omikuji.style.top = y - shiftY + "px";
+    }
 
-  function onMouseMove(e) {
-    moveAt(e.clientX, e.clientY);
-  }
+    function onPointerMove(e) {
+      moveAt(e.clientX, e.clientY);
+    }
 
-  document.addEventListener("mousemove", onMouseMove);
+    document.addEventListener("pointermove", onPointerMove);
 
-  // ★ 重要：document 全体で mouseup を拾う
-  function onMouseUp() {
-    document.removeEventListener("mousemove", onMouseMove);
-    document.removeEventListener("mouseup", onMouseUp);
+    function onPointerUp(e) {
+      document.removeEventListener("pointermove", onPointerMove);
+      document.removeEventListener("pointerup", onPointerUp);
 
-    omikuji.style.cursor = "grab";
-    dragging = null;
+      omikuji.style.cursor = "grab";
+      dragging = null;
 
-    checkDrop(omikuji);
-  }
+      checkDrop(omikuji);
+    }
 
-  document.addEventListener("mouseup", onMouseUp);
-};
+    document.addEventListener("pointerup", onPointerUp);
+  };
 }
-
 // --- 良い・悪いゾーンの判定 ---
 function checkDrop(omikuji) {
   const rect = omikuji.getBoundingClientRect();
