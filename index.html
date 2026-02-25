@@ -3,125 +3,197 @@
 <head>
   <meta charset="utf-8">
   <title>緑玉神社</title>
-  <style>
-body, #gameScreen, .omikuji {
-  user-select: none;
-  -webkit-user-select: none;
-  -ms-user-select: none;
-}
+<style>
+/* --- 1. デバイス全体の固定設定 --- */
 body {
   margin: 0;
   padding: 0;
-  background: #000; /* スマホアプリ風の黒背景 */
+  background: #000;
   display: flex;
   justify-content: center;
   align-items: center;
   height: 100vh;
+  width: 100vw;
+  overflow: hidden; /* スクロール禁止 */
+  position: fixed;  /* スマホのバウンス禁止  */
+  touch-action: none; /* ブラウザ操作を無効化  */
 }
 
-
-
-/* --- モード選択画面 --- */
-#modeSelect {
-  margin-top: 100px;
-}
-button {
-  font-size: 24px;
-  padding: 10px 30px;
-  margin: 10px;
-}
-
-/* --- ゲーム画面 --- */
+/* --- 2. ゲーム画面の比率固定 --- */
 #gameScreen {
-  aspect-ratio: 9 / 17;
-  height: 90vh;              /* ← 縦を基準にする */
-  width: auto;               /* ← 横は自動計算（幅の影響を消す） */
-  max-width: 100vw;          /* ← 横が狭いデバイスでもはみ出さない */
-  background: #fff;
   position: relative;
-  overflow: hidden;
-  border-radius: 20px;       /* スマホっぽい丸角 */
+  aspect-ratio: 9 / 17;
+  height: 95vh;     /* 画面の高さに合わせる */
+  width: auto;
+  max-width: 100vw;
+  background: #fff;
+  overflow: hidden; 
+  border-radius: 10px;
+  touch-action: none; /* ゲーム内操作を優先 [cite: 6] */
 }
 
-
-
-#info {
-  font-size: 24px;
-  padding: 10px;
-}
-
-#goodZone, #badZone {
+/* --- 3. 判定ゾーンのレスポンシブ化 --- */
+/* --- 判定ゾーンをサッカーゴール風に --- */
+#badZone, #goodZone {
   position: absolute;
-  top: 200px;
-  width: 40%;
-  height: 300px;
-  border: 3px dashed #aaa;
-  line-height: 300px;
-  font-size: 32px;
-  font-weight: bold;
+  bottom: 11%;         /* 皿の少し上の高さは維持 */
+  width: 100px;
+  height: 150px;
+  border: 4px solid;
+  border-bottom: none; 
+  background: rgba(255, 255, 255, 0.2);
+  z-index: 5;          /* おみくじの下に配置 */
 }
-#badZone { left: 5%; color: purple; }
-#goodZone { right: 5%; color: red; }
 
+#badZone { 
+  left: -9%; 
+  border-color: purple; 
+  transform: rotate(-20deg); /* 少し内側に向ける */
+}
+
+#goodZone { 
+  right: -9%; 
+  border-color: red; 
+  transform: rotate(20deg); /* 少し内側に向ける */
+}
+/* --- 4. 皿の位置を固定 --- */
 #plate {
   position: absolute;
-  bottom: 80px;
+  bottom: 10%;      /* 下部からの位置を固定  */
   left: 50%;
   transform: translateX(-50%);
-  width: 300px;
-  height: 40px;
+  width: 50%;       /* 皿の幅を画面の半分に固定  */
+  height: 4%;
   background: silver;
   border-radius: 20px;
-  text-align: center;
-  line-height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   font-weight: bold;
-  border: 3px solid #aaa;
+  border: 3px solid #666;
 }
 
-/* --- おみくじ --- */
+/* --- おみくじのサイズも調整 --- */
 .omikuji {
   position: absolute;
-  width: 120px;
-  height: 50px;
-  line-height: 50px;
-  border-radius: 10px;
+  width: 100px;
+  height: 45px;
+  line-height: 45px;
+  text-align: center;
+  border-radius: 5px;
   color: #fff;
   font-weight: bold;
-  cursor: grab;
-  user-select: none;
+  z-index: 10;
+  touch-action: none;
 }
-.good { background: red; }
-.bad  { background: purple; }
-  </style>
+/* 文字選択と長押しメニューを完全に禁止 */
+* {
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+}
+.omikuji {
+  /* ドラッグしやすくするため、タッチ時の挙動を制限 */
+  touch-action: none;
+  cursor: grab;
+  /* 色が赤に固定されていたので、クラスで指定できるように変更 */
+}
+.good { background-color: #ff4444; }
+.bad { background-color: #4444ff; }
+
+
+#gameScreen {
+  position: relative;
+  aspect-ratio: 9 / 17; /* 比率を9:17に固定  */
+  height: 95vh;
+  background: #fff;
+  overflow: hidden;
+  border-radius: 10px;
+}
+
+#modeSelect {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: #ffccaa; /* お手本に近いオレンジ色 */
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  z-index: 100;
+}
+
+.menu-container {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  width: 80%;
+}
+
+.menu-btn {
+  padding: 15px 0;
+  font-size: 1.2rem;
+  font-weight: bold;
+  background: #fff;
+  border: 2px solid #2e7d32; /* 緑の枠線 */
+  border-radius: 8px;
+  cursor: pointer;
+}
+</style>
 </head>
 <body>
 
 <!-- モード選択画面 -->
-<div id="modeSelect">
-  <h1>モードを選択</h1>
-  <button id="startBtn">スタート</button>
-</div>
-
-<!-- ゲーム画面 -->
 <div id="gameScreen">
-  <div id="info">残り時間：<span id="time">30</span>　入れた数：<span id="score">0</span></div>
+  <div id="modeSelect">
+    <div class="menu-container">
+      <button class="menu-btn">エンドレス</button>
+      <button id="startBtn" class="menu-btn">スタート</button>
+      <button class="menu-btn">今はなし</button>
+    </div>
+  </div>
 
-  <div id="badZone">悪い</div>
-  <div id="goodZone">良い</div>
-  <div id="plate">皿</div>
+  <div id="info" style="display:none;">残り時間：<span id="time">30</span>　入れた数：<span id="score">0</span></div>
+  <div id="badZone" style="display:none;">悪い</div>
+  <div id="goodZone" style="display:none;">良い</div>
+  <div id="plate" style="display:none;">皿</div>
 </div>
 
 <script>
-let timeLeft = 30;
+  // ==========================================
+//   ゲームバランス調整用パラメータ
+// ==========================================
+// --- ゲームバランス調整用 ---
+const PARAMS = {
+  gravity: 0.25,          // 重力（落下の加速速度）
+  maxFallSpeed: 8,        // 最大落下速度（リミッター）
+  friction: 0.96,         // 空気抵抗（はじいた後の減速比。1に近づくほど止まらない）
+  tossPower: 1.2,         // はじく強さの倍率
+  bounceLimit: -0.5,      // 壁に当たった時の跳ね返り係数
+  spawnInterval: 100,    // おみくじが出てくる間隔（ミリ秒）
+  gameTime: 30            // 制限時間（秒）
+};
+
+// 内部管理用変数
+let timeLeft = PARAMS.gameTime;
 let score = 0;
 let gameInterval;
 let fallInterval;
 let dragging = null;
 
 document.getElementById("startBtn").onclick = () => {
+  // モード選択を隠す
   document.getElementById("modeSelect").style.display = "none";
-  document.getElementById("gameScreen").style.display = "block";
-  startGame();
+  
+  // ゲーム要素を表示する
+  document.getElementById("info").style.display = "block";
+  document.getElementById("badZone").style.display = "block";
+  document.getElementById("goodZone").style.display = "block";
+  document.getElementById("plate").style.display = "block";
+  
+  startGame(); // ゲーム開始 [cite: 15]
 };
 
 function startGame() {
@@ -141,75 +213,94 @@ function endGame() {
 }
 
 function spawnOmikuji() {
+  const gameScreen = document.getElementById("gameScreen");
   const omikuji = document.createElement("div");
+  
+  // --- 【修正：ここから】おみくじの見た目と初期設定 ---
   const isGood = Math.random() < 0.5;
-
   omikuji.className = "omikuji " + (isGood ? "good" : "bad");
   omikuji.textContent = isGood ? "大吉" : "大凶";
 
-  // ★ ゲーム画面の幅・高さを取得（デバイスに依存しない）
-  const game = document.getElementById("gameScreen");
-  const rect = game.getBoundingClientRect();
+  // 出現位置をゲーム画面の幅に基づいてランダムに設定
+  const screenWidth = gameScreen.clientWidth;
+  omikuji.style.left = Math.random() * (screenWidth - 100) + "px";
+  omikuji.style.top = "-50px"; // 画面の上端から出現
+  gameScreen.appendChild(omikuji);
+  // --- 【修正：ここまで】 ---
 
-  // ★ 中央40%〜60%の範囲に落とす（ゲーム画面基準）
-  const minX = rect.width * 0.3;
-  const maxX = rect.width * 0.7;
-
-  omikuji.style.left = (minX + Math.random() * (maxX - minX)) + "px";
-  omikuji.style.top = "-60px";
-
-  game.appendChild(omikuji);
-
-  let fallSpeed = 2 + Math.random() * 3;
+  let vx = 0; // 横速度
+  let vy = 0; // 縦速度
+  let isOnPlate = false;
 
   const fall = setInterval(() => {
-    if (dragging === omikuji) return;
+    if (dragging === omikuji || isOnPlate) return;
 
-    let top = parseFloat(omikuji.style.top);
-    omikuji.style.top = top + fallSpeed + "px";
+    // 重力計算（PARAMS.maxFallSpeed に名称を統一）
+    vy += PARAMS.gravity;
+    if (vy > PARAMS.maxFallSpeed) vy = PARAMS.maxFallSpeed;
+    
+    // 座標更新
+    let x = parseFloat(omikuji.style.left) + vx;
+    let y = parseFloat(omikuji.style.top) + vy;
 
-    // ★ 皿に乗ったか判定
-    if (checkPlate(omikuji, fall)) return;
+    // 壁バウンド
+    if (x < 0 || x > gameScreen.clientWidth - 100) {
+      vx *= PARAMS.bounceLimit; // 跳ね返り
+      x = x < 0 ? 0 : gameScreen.clientWidth - 100;
+    }
 
-    // ★ ゲーム画面の高さ基準で削除
-    if (top > rect.height) {
+    omikuji.style.left = x + "px";
+    omikuji.style.top = y + "px";
+
+    // 速度減衰（慣性）
+    vx *= PARAMS.friction;
+
+    // 皿判定
+    if (checkPlate(omikuji)) {
+      isOnPlate = true;
+      vx = 0; vy = 0;
+    }
+
+    // ゴール（ゾーン）判定
+    checkDrop(omikuji);
+
+    // 画面外（下端）へ消えたら削除
+    if (y > gameScreen.clientHeight) {
       clearInterval(fall);
       omikuji.remove();
     }
   }, 16);
 
-  // --- 掴む処理（pointer対応） ---
+  // --- はじく＆掴む処理 ---
   omikuji.onpointerdown = (e) => {
     e.preventDefault();
     dragging = omikuji;
+    isOnPlate = false;
     omikuji.setPointerCapture(e.pointerId);
-    omikuji.style.cursor = "grabbing";
 
-    const shiftX = e.clientX - omikuji.getBoundingClientRect().left;
-    const shiftY = e.clientY - omikuji.getBoundingClientRect().top;
+    let lastX = e.clientX;
+    let lastY = e.clientY;
 
-    function moveAt(x, y) {
-      omikuji.style.left = x - shiftX + "px";
-      omikuji.style.top = y - shiftY + "px";
-    }
+    const move = (ev) => {
+      if (dragging !== omikuji) return;
+      // 指の移動距離から速度を計算
+      vx = (ev.clientX - lastX) * PARAMS.tossPower;
+      vy = (ev.clientY - lastY) * PARAMS.tossPower;
+      lastX = ev.clientX;
+      lastY = ev.clientY;
 
-    function onPointerMove(e) {
-      moveAt(e.clientX, e.clientY);
-    }
+      const sRect = gameScreen.getBoundingClientRect();
+      omikuji.style.left = (ev.clientX - sRect.left - 50) + "px";
+      omikuji.style.top = (ev.clientY - sRect.top - 22) + "px";
+    };
 
-    document.addEventListener("pointermove", onPointerMove);
-
-    function onPointerUp(e) {
-      document.removeEventListener("pointermove", onPointerMove);
-      document.removeEventListener("pointerup", onPointerUp);
-
-      omikuji.style.cursor = "grab";
+    const up = () => {
+      document.removeEventListener("pointermove", move);
+      document.removeEventListener("pointerup", up);
       dragging = null;
-
-      checkDrop(omikuji);
-    }
-
-    document.addEventListener("pointerup", onPointerUp);
+    };
+    document.addEventListener("pointermove", move);
+    document.addEventListener("pointerup", up);
   };
 }
 // --- 良い・悪いゾーンの判定 ---
@@ -236,22 +327,23 @@ function isOverlap(a, b) {
 }
 
 // --- 皿の判定 ---
-function checkPlate(omikuji, fall) {
+// 皿判定の修正（タイマーを止めずに、乗っているフラグを返すだけにする）
+function checkPlate(omikuji) {
   const plate = document.getElementById("plate").getBoundingClientRect();
   const rect = omikuji.getBoundingClientRect();
-
   const centerX = rect.left + rect.width / 2;
-  const centerY = rect.top + rect.height / 2;
+  const centerY = rect.bottom; // おみくじの下端で判定
 
   const onPlate =
     centerX > plate.left &&
     centerX < plate.right &&
-    centerY > plate.top &&
-    centerY < plate.bottom;
+    centerY >= plate.top &&
+    centerY <= plate.bottom;
 
   if (onPlate) {
-    clearInterval(fall);
-    omikuji.style.top = (plate.top - rect.height) + "px";
+    // 皿の表面にピタッと合わせる
+    const screenRect = document.getElementById("gameScreen").getBoundingClientRect();
+    omikuji.style.top = (plate.top - screenRect.top - rect.height) + "px";
     return true;
   }
   return false;
