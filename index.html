@@ -34,32 +34,37 @@ body {
 
 /* --- 3. 判定ゾーンのレスポンシブ化 --- */
 /* --- 判定ゾーンをサッカーゴール風に --- */
+/* --- 判定ゾーンをデバイス幅に左右されず端に固定 --- */
 #badZone, #goodZone {
   position: absolute;
-  bottom: 11%;         /* 皿の少し上の高さは維持 */
-  width: 100px;
-  height: 150px;
+  bottom: 35%;
+  width: 28%;          /* 画面幅の28%に固定 */
+  height: 20%;         /* 高さも%にすると縦長デバイスでも安定します */
   border: 4px solid;
   border-bottom: none; 
   background: rgba(255, 255, 255, 0.2);
-  z-index: 5;          /* おみくじの下に配置 */
+  z-index: 5;
 }
 
 #badZone { 
-  left: -9%; 
+  left: -12%;             /* 左端にぴったり配置 */
   border-color: purple; 
-  transform: rotate(-20deg); /* 少し内側に向ける */
+  border-left: none;   /* 左側の線を消すとよりゴールっぽくなります */
+  transform: rotate(-10deg);
+  transform-origin: left bottom; /* 左下を軸に回転 */
 }
 
 #goodZone { 
-  right: -9%; 
+  right: -12%;            /* 右端にぴったり配置 */
   border-color: red; 
-  transform: rotate(20deg); /* 少し内側に向ける */
+  border-right: none;  /* 右側の線を消す */
+  transform: rotate(10deg);
+  transform-origin: right bottom; /* 右下を軸に回転 */
 }
 /* --- 4. 皿の位置を固定 --- */
 #plate {
   position: absolute;
-  bottom: 10%;      /* 下部からの位置を固定  */
+  bottom: 28%;      /* 下部からの位置を固定  */
   left: 50%;
   transform: translateX(-50%);
   width: 50%;       /* 皿の幅を画面の半分に固定  */
@@ -74,17 +79,18 @@ body {
 }
 
 /* --- おみくじのサイズも調整 --- */
+/* --- おみくじのサイズ固定 --- */
 .omikuji {
   position: absolute;
-  width: 100px;
-  height: 45px;
-  line-height: 45px;
-  text-align: center;
-  border-radius: 5px;
-  color: #fff;
-  font-weight: bold;
+  width: 11%;          /* 画面幅の22%に固定 */
+  aspect-ratio: 1 / 1.5; /* おみくじ画像が縦長なら 1 / 2 に調整 */
   z-index: 10;
   touch-action: none;
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+  /* テキストを表示しない場合は以下を追加 */
+  text-indent: -9999px;
 }
 /* 文字選択と長押しメニューを完全に禁止 */
 * {
@@ -170,8 +176,8 @@ const PARAMS = {
   gravity: 0.25,          // 重力（落下の加速速度）
   maxFallSpeed: 8,        // 最大落下速度（リミッター）
   friction: 0.96,         // 空気抵抗（はじいた後の減速比。1に近づくほど止まらない）
-  tossPower: 1.2,         // はじく強さの倍率
-  bounceLimit: -0.5,      // 壁に当たった時の跳ね返り係数
+  tossPower: 1.0005,         // はじく強さの倍率
+  bounceLimit: -0.1,      // 壁に当たった時の跳ね返り係数
   spawnInterval: 100,    // おみくじが出てくる間隔（ミリ秒）
   gameTime: 30            // 制限時間（秒）
 };
@@ -215,19 +221,33 @@ function endGame() {
 function spawnOmikuji() {
   const gameScreen = document.getElementById("gameScreen");
   const omikuji = document.createElement("div");
-  
-  // --- 【修正：ここから】おみくじの見た目と初期設定 ---
+
+  // 1. おみくじの中身とクラスを設定 
   const isGood = Math.random() < 0.5;
   omikuji.className = "omikuji " + (isGood ? "good" : "bad");
   omikuji.textContent = isGood ? "大吉" : "大凶";
 
-  // 出現位置をゲーム画面の幅に基づいてランダムに設定
-  const screenWidth = gameScreen.clientWidth;
-  omikuji.style.left = Math.random() * (screenWidth - 100) + "px";
-  omikuji.style.top = "-50px"; // 画面の上端から出現
+// --- 【ここを画像に差し替え】 ---
+  if (isGood) {
+    omikuji.style.backgroundImage = "url('daikichi.jpg')"; // 大吉の画像パス
+  } else {
+    omikuji.style.backgroundImage = "url('daikyo.png')";   // 大凶の画像パス
+  }
+  // 2. 画面に追加（サイズ取得のために先にappendする） 
   gameScreen.appendChild(omikuji);
-  // --- 【修正：ここまで】 ---
 
+  // 3. レスポンシブな初期位置計算
+  // 画面幅からおみくじ自身の幅を引いて、はみ出さないように配置 
+// --- おみくじの出現範囲を中央に制限 ---
+const screenWidth = gameScreen.clientWidth;
+const oWidth = omikuji.offsetWidth || (screenWidth * 0.22);
+
+// 画面の左右25%ずつを禁止エリアにし、中央の50%の範囲内だけでランダムにします
+const minLeft = screenWidth * 0.25; // 左端から25%の位置
+const maxLeft = screenWidth * 0.75 - oWidth; // 右端から25%を引いた位置
+
+omikuji.style.left = (Math.random() * (maxLeft - minLeft) + minLeft) + "px";
+omikuji.style.top = "-100px"; // 画面の外から降らせる
   let vx = 0; // 横速度
   let vy = 0; // 縦速度
   let isOnPlate = false;
@@ -235,7 +255,7 @@ function spawnOmikuji() {
   const fall = setInterval(() => {
     if (dragging === omikuji || isOnPlate) return;
 
-    // 重力計算（PARAMS.maxFallSpeed に名称を統一）
+    // 重力計算（PARAMSを使用） 
     vy += PARAMS.gravity;
     if (vy > PARAMS.maxFallSpeed) vy = PARAMS.maxFallSpeed;
     
@@ -243,35 +263,38 @@ function spawnOmikuji() {
     let x = parseFloat(omikuji.style.left) + vx;
     let y = parseFloat(omikuji.style.top) + vy;
 
-    // 壁バウンド
-    if (x < 0 || x > gameScreen.clientWidth - 100) {
-      vx *= PARAMS.bounceLimit; // 跳ね返り
-      x = x < 0 ? 0 : gameScreen.clientWidth - 100;
+    // 壁バウンド（画面幅に合わせて動的に判定） 
+    if (x < 0) {
+      x = 0;
+      vx *= PARAMS.bounceLimit;
+    } else if (x > screenWidth - oWidth) {
+      x = screenWidth - oWidth;
+      vx *= PARAMS.bounceLimit;
     }
 
     omikuji.style.left = x + "px";
     omikuji.style.top = y + "px";
 
-    // 速度減衰（慣性）
+    // 速度減衰（慣性） 
     vx *= PARAMS.friction;
 
-    // 皿判定
+    // 皿判定 
     if (checkPlate(omikuji)) {
       isOnPlate = true;
       vx = 0; vy = 0;
     }
 
-    // ゴール（ゾーン）判定
+    // ゴール判定 
     checkDrop(omikuji);
 
-    // 画面外（下端）へ消えたら削除
+    // 画面外削除
     if (y > gameScreen.clientHeight) {
       clearInterval(fall);
       omikuji.remove();
     }
   }, 16);
 
-  // --- はじく＆掴む処理 ---
+  // --- ドラッグ＆はじく処理（中心点ズレ修正版） ---
   omikuji.onpointerdown = (e) => {
     e.preventDefault();
     dragging = omikuji;
@@ -283,15 +306,18 @@ function spawnOmikuji() {
 
     const move = (ev) => {
       if (dragging !== omikuji) return;
-      // 指の移動距離から速度を計算
+      
+      // 速度計算 
       vx = (ev.clientX - lastX) * PARAMS.tossPower;
       vy = (ev.clientY - lastY) * PARAMS.tossPower;
       lastX = ev.clientX;
       lastY = ev.clientY;
 
       const sRect = gameScreen.getBoundingClientRect();
-      omikuji.style.left = (ev.clientX - sRect.left - 50) + "px";
-      omikuji.style.top = (ev.clientY - sRect.top - 22) + "px";
+      
+      // 指の真ん中におみくじが来るように計算 
+      omikuji.style.left = (ev.clientX - sRect.left - (omikuji.offsetWidth / 2)) + "px";
+      omikuji.style.top = (ev.clientY - sRect.top - (omikuji.offsetHeight / 2)) + "px";
     };
 
     const up = () => {
@@ -299,6 +325,7 @@ function spawnOmikuji() {
       document.removeEventListener("pointerup", up);
       dragging = null;
     };
+    
     document.addEventListener("pointermove", move);
     document.addEventListener("pointerup", up);
   };
