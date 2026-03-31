@@ -64,20 +64,45 @@ body {
 /* --- 4. 皿の位置を固定 --- */
 #plate {
   position: absolute;
-  bottom: 28%;      /* 下部からの位置を固定  */
+  bottom: 30%;
   left: 50%;
   transform: translateX(-50%);
-  width: 50%;       /* 皿の幅を画面の半分に固定  */
-  height: 4%;
-  background: silver;
-  border-radius: 20px;
+  width: 55%;           /* 少し幅を広めに */
+  height: 5%;         /* 台座の厚み */
+  background: linear-gradient(to bottom, #e0e0e0, #bdbdbd); /* 前面のグラデーション */
+  border-radius: 4px;
+  z-index: 6;
+  box-shadow: 0 10px 20px rgba(0,0,0,0.3); /* 下に落とす影 */
+}
+/* 台座の「上面（奥行き部分）」 */
+#plate::before {
+  content: "";
+  position: absolute;
+  top: -15px;           /* 厚みの分だけ上に配置 */
+  left: 0;
+  width: 100%;
+  height: 15px;
+  background: #824242;  /* 上面は光が当たって明るい色 */
+  border-radius: 4px 4px 0 0;
+  transform: perspective(100px) rotateX(40deg); /* 奥行きを出すマジック */
+}
+
+/* 台座の「脚（下の支え部分）」 */
+#plate::after {
+  content: "皿";       /* 文字を入れる場合はここ */
   display: flex;
   align-items: center;
   justify-content: center;
   font-weight: bold;
-  border: 3px solid #666;
+  color: #757575;
+  position: absolute;
+  bottom: -100%;
+  left: 15%;
+  width: 70%;
+  height: 100%;
+  background: #9e9e9e;
+  clip-path: polygon(10% 0%, 90% 0%, 100% 100%, 0% 100%); /* 台形にする */
 }
-
 /* --- おみくじのサイズも調整 --- */
 /* --- おみくじのサイズ固定 --- */
 .omikuji {
@@ -164,7 +189,7 @@ body {
   <div id="info" style="display:none;">残り時間：<span id="time">30</span>　入れた数：<span id="score">0</span></div>
   <div id="badZone" style="display:none;">悪い</div>
   <div id="goodZone" style="display:none;">良い</div>
-  <div id="plate" style="display:none;">皿</div>
+  <div id="plate" style="display:none;"></div>
 </div>
 
 <script>
@@ -173,9 +198,9 @@ body {
 // ==========================================
 // --- ゲームバランス調整用 ---
 const PARAMS = {
-  gravity: 0.25,          // 重力（落下の加速速度）
-  maxFallSpeed: 8,        // 最大落下速度（リミッター）
-  friction: 0.96,         // 空気抵抗（はじいた後の減速比。1に近づくほど止まらない）
+  gravity: 0.5,          // 重力（落下の加速速度）
+  maxFallSpeed: 7,        // 最大落下速度（リミッター）
+  friction: 0.99,         // 空気抵抗（はじいた後の減速比。1に近づくほど止まらない）
   tossPower: 1.0005,         // はじく強さの倍率
   bounceLimit: -0.1,      // 壁に当たった時の跳ね返り係数
   spawnInterval: 100,    // おみくじが出てくる間隔（ミリ秒）
@@ -243,7 +268,7 @@ const screenWidth = gameScreen.clientWidth;
 const oWidth = omikuji.offsetWidth || (screenWidth * 0.22);
 
 // 画面の左右25%ずつを禁止エリアにし、中央の50%の範囲内だけでランダムにします
-const minLeft = screenWidth * 0.25; // 左端から25%の位置
+const minLeft = screenWidth * 0.3; // 左端から25%の位置
 const maxLeft = screenWidth * 0.75 - oWidth; // 右端から25%を引いた位置
 
 omikuji.style.left = (Math.random() * (maxLeft - minLeft) + minLeft) + "px";
