@@ -172,12 +172,59 @@ body {
   border-radius: 8px;
   cursor: pointer;
 }
+  /* --- おみくじの情報表示 --- */
+#info {
+  /* 親の #gameScreen を基準にする */
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 6%; /* 少し高さを出すとバランスが良いです */
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  background: rgba(0, 0, 0, 0.7); /* 少し濃いめの半透明黒 */
+  color: #fff;
+  z-index: 110; /* モード選択や皿よりも上に表示 */
+  border-bottom: 2px solid #ffcc00; /* 下に金色の線を引くと神社っぽくなります */
+}
+
+/* 各項目の調整 */
+.info-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex: 1;
+}
+
+.label {
+  font-size: 2%;
+  color: #ffcc00;
+  font-weight: bold;
+}
+
+#time, #money, #score {
+  font-family: 'Courier New', Courier, monospace; /* 数字を等幅にするとガタつきません */
+}
 </style>
 </head>
 <body>
-
-<!-- モード選択画面 -->
 <div id="gameScreen">
+  <div id="info" style="display:none;">
+    <div class="info-item">
+      <span class="label">￥</span>
+      <span id="money">0</span>
+    </div>
+    <div class="info-item timer">
+      <span id="time">30</span>
+    </div>
+    <div class="info-item">
+      <span class="label">数</span>
+      <span id="score">0</span>
+    </div>
+  </div>
+<!-- モード選択画面 -->
+
   <div id="modeSelect">
     <div class="menu-container">
       <button class="menu-btn">エンドレス</button>
@@ -186,7 +233,7 @@ body {
     </div>
   </div>
 
-  <div id="info" style="display:none;">残り時間：<span id="time">30</span>　入れた数：<span id="score">0</span></div>
+
   <div id="badZone" style="display:none;">悪い</div>
   <div id="goodZone" style="display:none;">良い</div>
   <div id="plate" style="display:none;"></div>
@@ -215,16 +262,18 @@ let fallInterval;
 let dragging = null;
 
 document.getElementById("startBtn").onclick = () => {
-  // モード選択を隠す
   document.getElementById("modeSelect").style.display = "none";
   
-  // ゲーム要素を表示する
-  document.getElementById("info").style.display = "block";
+  // info を block ではなく flex で表示させる
+  const info = document.getElementById("info");
+  info.style.display = "flex"; 
+  
+  // 他の要素を表示
   document.getElementById("badZone").style.display = "block";
   document.getElementById("goodZone").style.display = "block";
   document.getElementById("plate").style.display = "block";
   
-  startGame(); // ゲーム開始 [cite: 15]
+  startGame();
 };
 
 function startGame() {
@@ -356,20 +405,25 @@ omikuji.style.top = "-100px"; // 画面の外から降らせる
   };
 }
 // --- 良い・悪いゾーンの判定 ---
+let money = 0; // お金の変数を追加
+
 function checkDrop(omikuji) {
   const rect = omikuji.getBoundingClientRect();
   const good = document.getElementById("goodZone").getBoundingClientRect();
   const bad = document.getElementById("badZone").getBoundingClientRect();
-
   const isGood = omikuji.classList.contains("good");
 
-  if (isOverlap(rect, good) && isGood) {
+  // 判定ロジック
+  if ((isOverlap(rect, good) && isGood) || (isOverlap(rect, bad) && !isGood)) {
+    // スコア加算
     score++;
     document.getElementById("score").textContent = score;
-    omikuji.remove();
-  } else if (isOverlap(rect, bad) && !isGood) {
-    score++;
-    document.getElementById("score").textContent = score;
+
+    // お金加算（1回につき5円など）
+    money += 5;
+    document.getElementById("money").textContent = money;
+
+    // 演出：消えるときのエフェクトなどをここに追加
     omikuji.remove();
   }
 }
