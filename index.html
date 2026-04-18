@@ -108,14 +108,23 @@ body {
 .omikuji {
   position: absolute;
   width: 11%;          /* 画面幅の22%に固定 */
-  aspect-ratio: 1 / 1.5; /* おみくじ画像が縦長なら 1 / 2 に調整 */
+  aspect-ratio: 1 / 1.5; /* 用意した画像の縦横比に合わせて調整（例：縦長 1 / 1.5） */
   z-index: 10;
-  touch-action: none;
-  background-size: contain;
-  background-repeat: no-repeat;
-  background-position: center;
-  /* テキストを表示しない場合は以下を追加 */
-  text-indent: -9999px;
+  touch-action: none;   /* 操作を安定させる */
+  
+  /* --- 【ここを追加】画像の表示設定 --- */
+  background-size: contain;      /* 画像全体が収まるように */
+  background-repeat: no-repeat;  /* 繰り返さない */
+  background-position: center;   /* 中央に配置 */
+  background-color: transparent; /* 背景色は透明に（画像優先） */
+  
+  /* 画像の上に文字を表示する場合のスタイル */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff; /* 文字色 */
+  font-weight: bold;
+  font-size: 1.5vw;
 }
 /* 文字選択と長押しメニューを完全に禁止 */
 * {
@@ -206,6 +215,68 @@ body {
 #time, #money, #score {
   font-family: 'Courier New', Courier, monospace; /* 数字を等幅にするとガタつきません */
 }
+#shopContainer {
+  position: absolute;
+  bottom: 2%;         /* 画面の一番下から2%の位置 */
+  left: 50%;
+  transform: translateX(-50%);
+  width: 95%;         /* 横幅いっぱい */
+  display: none;      /* JSでflexに切り替える */
+  justify-content: center;
+  gap: 15px;          /* アイテム間の隙間 */
+  z-index: 200;       /* 皿やゾーンよりも手前に */
+  pointer-events: auto; /* クリックを有効に */
+}
+
+.item-slot {
+  width: 80px;
+  height: 100px;
+  background: rgba(255, 255, 255, 0.9);
+  border: 3px solid #ccc;
+  border-radius: 10px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-around;
+}
+
+/* 買える時に光る演出 */
+/* 買える時に光る演出（より目立たせる） */
+.item-slot.can-buy {
+  border-color: #1eff00;
+  box-shadow: 0 0 20px #3eb752;
+  background: rgb(187, 255, 174); /* 背景も少し黄色く */
+  animation: pulse 1.0s infinite ease-in-out; /* 1.5sから1.0sに速く */
+}
+
+@keyframes pulse {
+  0% { transform: scale(1); box-shadow: 0 0 5px #00ff2f; }
+  50% { transform: scale(1.08); box-shadow: 0 0 25px #00ff2f; }
+  100% { transform: scale(1); box-shadow: 0 0 5px #00ff2f; }
+}
+
+/* 売り切れ状態 */
+.item-slot.sold-out {
+  background: #555 !important;
+  box-shadow: none !important;
+  animation: none !important;
+  pointer-events: none;
+}
+.item-slot.sold-out::after {
+  content: "SOLD OUT";
+  color: red;
+  font-weight: bold;
+  font-size: 10px;
+}
+
+#resetBtn {
+  padding: 10px;
+  background: #ff4444;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  font-weight: bold;
+}
 </style>
 </head>
 <body>
@@ -223,6 +294,17 @@ body {
       <span id="score">0</span>
     </div>
   </div>
+  <div id="shopContainer" style="display:none;">
+    <div class="item-slot" id="item0" onclick="buyItem(0)">
+      <div class="item-image"></div>
+      <div class="item-price">￥0</div>
+    </div>
+    <div class="item-slot" id="item1" onclick="buyItem(1)">
+      <div class="item-image"></div>
+      <div class="item-price">￥0</div>
+    </div>
+    <button id="resetBtn" onclick="resetShop()">更新</button>
+  </div>
 <!-- モード選択画面 -->
 
   <div id="modeSelect">
@@ -237,6 +319,8 @@ body {
   <div id="badZone" style="display:none;">悪い</div>
   <div id="goodZone" style="display:none;">良い</div>
   <div id="plate" style="display:none;"></div>
+
+
 </div>
 
 <script>
@@ -250,7 +334,6 @@ const PARAMS = {
   friction: 0.99,         // 空気抵抗（はじいた後の減速比。1に近づくほど止まらない）
   tossPower: 1.0005,         // はじく強さの倍率
   bounceLimit: -0.1,      // 壁に当たった時の跳ね返り係数
-  spawnInterval: 100,    // おみくじが出てくる間隔（ミリ秒）
   gameTime: 30            // 制限時間（秒）
 };
 
@@ -261,19 +344,27 @@ let gameInterval;
 let fallInterval;
 let dragging = null;
 
+
 document.getElementById("startBtn").onclick = () => {
+  // すでにゲームが始まっていたら何もしない（連打防止）
+  if (spawnTimer !== null) return; 
+
   document.getElementById("modeSelect").style.display = "none";
+  document.getElementById("info").style.display = "flex";
+  document.getElementById("shopContainer").style.display = "flex";
   
-  // info を block ではなく flex で表示させる
-  const info = document.getElementById("info");
-  info.style.display = "flex"; 
-  
-  // 他の要素を表示
+  // 各要素の表示
   document.getElementById("badZone").style.display = "block";
   document.getElementById("goodZone").style.display = "block";
   document.getElementById("plate").style.display = "block";
+
+  resetShop();
   
-  startGame();
+  // 初期の間隔を設定してタイマー起動
+  gameState.spawnInterval = 1200; 
+  restartSpawnTimer(); 
+  
+  startGame(); // タイムカウントダウンなど
 };
 
 function startGame() {
@@ -283,7 +374,6 @@ function startGame() {
     if (timeLeft <= 0) endGame();
   }, 1000);
 
-  fallInterval = setInterval(spawnOmikuji, 1200);
 }
 
 function endGame() {
@@ -292,36 +382,60 @@ function endGame() {
   alert("ゲーム終了！ 入れた数：" + score);
 }
 
+
+// おみくじの種類と報酬の設定
+// ==========================================
+//   おみくじの種類・報酬・画像設定
+// ==========================================
+const OMIKUJI_TYPES = {
+  '大吉': { color: '#ff1111', goodPay: 50, badPay: 0,  image: '1.png' },
+  '吉':   { color: '#ff8800', goodPay: 30, badPay: 5,  image: '2.png' },
+  '中吉': { color: '#ffcc00', goodPay: 20, badPay: 10, image: '3.png' },
+  '小吉': { color: '#88ff00', goodPay: 15, badPay: 5,  image: '4.png' },
+  '末吉': { color: '#00ffcc', goodPay: 10, badPay: 2,  image: '5.png' },
+  '凶':   { color: '#555555', goodPay: 0,  badPay: 20, image: '6.png' }
+};
+// ==========================================
+
+
 function spawnOmikuji() {
   const gameScreen = document.getElementById("gameScreen");
   const omikuji = document.createElement("div");
 
-  // 1. おみくじの中身とクラスを設定 
-  const isGood = Math.random() < 0.5;
-  omikuji.className = "omikuji " + (isGood ? "good" : "bad");
-  omikuji.textContent = isGood ? "大吉" : "大凶";
+  // 基本の抽選プール
+  let pool = ["大吉", "吉", "中吉", "小吉", "末吉", "凶"];
 
-// --- 【ここを画像に差し替え】 ---
-  if (isGood) {
-    omikuji.style.backgroundImage = "url('daikichi.jpg')"; // 大吉の画像パス
-  } else {
-    omikuji.style.backgroundImage = "url('daikyo.png')";   // 大凶の画像パス
+  // アイテムレベルに応じて特定の運勢をプールに増やす
+  for (let i = 0; i < gameState.luckGoodLevel * 3; i++) {
+    pool.push("大吉", "吉");
   }
-  // 2. 画面に追加（サイズ取得のために先にappendする） 
+  for (let i = 0; i < gameState.luckBadLevel * 3; i++) {
+    pool.push("凶");
+  }
+console.log(5);
+  const typeName = pool[Math.floor(Math.random() * pool.length)];
+  const config = OMIKUJI_TYPES[typeName];
+
+  omikuji.className = "omikuji";
+  omikuji.dataset.type = typeName;
+  
+  // 画像の設定（config.imageがある場合）
+  if (config.image) {
+    omikuji.style.backgroundImage = `url(${config.image})`;
+  } else {
+    omikuji.style.backgroundColor = config.color;
+    omikuji.textContent = typeName;
+  }
+
   gameScreen.appendChild(omikuji);
-
-  // 3. レスポンシブな初期位置計算
-  // 画面幅からおみくじ自身の幅を引いて、はみ出さないように配置 
-// --- おみくじの出現範囲を中央に制限 ---
-const screenWidth = gameScreen.clientWidth;
-const oWidth = omikuji.offsetWidth || (screenWidth * 0.22);
-
-// 画面の左右25%ずつを禁止エリアにし、中央の50%の範囲内だけでランダムにします
-const minLeft = screenWidth * 0.3; // 左端から25%の位置
-const maxLeft = screenWidth * 0.75 - oWidth; // 右端から25%を引いた位置
-
-omikuji.style.left = (Math.random() * (maxLeft - minLeft) + minLeft) + "px";
-omikuji.style.top = "-100px"; // 画面の外から降らせる
+  
+  // --- 以下、座標計算とドラッグ処理 ---
+  const screenWidth = gameScreen.clientWidth;
+  const oWidth = omikuji.offsetWidth || (screenWidth * 0.22);
+  const minLeft = screenWidth * 0.3; 
+  const maxLeft = screenWidth * 0.7 - oWidth;
+  omikuji.style.left = (Math.random() * (maxLeft - minLeft) + minLeft) + "px";
+  omikuji.style.top = "-100px";
   let vx = 0; // 横速度
   let vy = 0; // 縦速度
   let isOnPlate = false;
@@ -408,24 +522,57 @@ omikuji.style.top = "-100px"; // 画面の外から降らせる
 let money = 0; // お金の変数を追加
 
 function checkDrop(omikuji) {
+
   const rect = omikuji.getBoundingClientRect();
-  const good = document.getElementById("goodZone").getBoundingClientRect();
-  const bad = document.getElementById("badZone").getBoundingClientRect();
-  const isGood = omikuji.classList.contains("good");
+  const goodGoal = document.getElementById("goodZone").getBoundingClientRect();
+  const badGoal = document.getElementById("badZone").getBoundingClientRect();
+  
+  const typeName = omikuji.dataset.type;
+  const config = OMIKUJI_TYPES[typeName];
+  let earnedMoney = 0;
+  let scored = false;
 
-  // 判定ロジック
-  if ((isOverlap(rect, good) && isGood) || (isOverlap(rect, bad) && !isGood)) {
-    // スコア加算
+  // 「良い方」に入った場合
+  if (isOverlap(rect, goodGoal)) {
+    earnedMoney = config.goodPay;
+    scored = true;
+  } 
+  // 「悪い方」に入った場合
+  else if (isOverlap(rect, badGoal)) {
+    earnedMoney = config.badPay;
+    scored = true;
+  }
+
+if (scored) {
+    // 倍率を適用して計算
+    const finalPay = Math.floor(earnedMoney * gameState.moneyMultiplier);
+    money += finalPay;
     score++;
-    document.getElementById("score").textContent = score;
-
-    // お金加算（1回につき5円など）
-    money += 5;
+    
     document.getElementById("money").textContent = money;
-
-    // 演出：消えるときのエフェクトなどをここに追加
+    updateShopVisuals();
+    showMoneyEffect(rect.left, rect.top, finalPay);
     omikuji.remove();
   }
+}
+
+// 金額が浮き出る演出
+function showMoneyEffect(x, y, amount) {
+  const effect = document.createElement("div");
+  effect.textContent = "+" + amount;
+  effect.style.position = "absolute";
+  effect.style.left = x + "px";
+  effect.style.top = y + "px";
+  effect.style.color = amount > 0 ? "#ffcc00" : "#ff4444";
+  effect.style.fontWeight = "bold";
+  effect.style.zIndex = 200;
+  effect.animate([
+    { transform: 'translateY(0)', opacity: 1 },
+    { transform: 'translateY(-50px)', opacity: 0 }
+  ], { duration: 800 });
+  
+  document.getElementById("gameScreen").appendChild(effect);
+  setTimeout(() => effect.remove(), 800);
 }
 
 function isOverlap(a, b) {
@@ -452,8 +599,131 @@ function checkPlate(omikuji) {
     omikuji.style.top = (plate.top - screenRect.top - rect.height) + "px";
     return true;
   }
+
   return false;
 }
+
+// アイテムデータ
+// --- ゲームの状態・アイテムレベル (最大3) ---
+// --- ゲームの状態管理（初期値を設定） ---
+const gameState = {
+  spawnInterval: 500, // 最初は1.2秒に1回
+  spawnRateLevel: 0,
+  moneyMultiplier: 1,
+  luckGoodLevel: 0,
+  luckBadLevel: 0,
+  itemLevels: {}
+};
+
+let spawnTimer = null; // タイマーを保持する変数
+
+function restartSpawnTimer() {
+  // すでに動いているタイマーがあれば、まず確実に止める
+  if (spawnTimer !== null) {
+    clearInterval(spawnTimer);
+    spawnTimer = null;
+  }
+
+  // gameStateに設定された間隔でおみくじを降らせる
+  spawnTimer = setInterval(() => {
+    spawnOmikuji();
+    console.log("おみくじを降らせました");
+  }, gameState.spawnInterval || 1200);
+}
+// アイテムリストを効果付きで更新
+
+const ITEM_LIST = [
+  { id: "spawn_up",   name: "降る量アップ", price: 15, image: "daikichi.png" },
+  { id: "spawn_down", name: "降る量ダウン", price: 10, image: "sp_down.png" }, // 追加
+  { id: "money",      name: "報酬アップ",   price: 20, image: "money.png" },
+  { id: "luck_good",  name: "吉の確率アップ", price: 20, image: "luck_kichi.png" }, // 追加
+  { id: "luck_bad",   name: "大凶の確率アップ", price: 12, image: "luck_kyo.png" }   // 追加
+];
+
+
+let currentItems = [];
+
+// ショップの更新（ランダムに2つ選ぶ）
+function resetShop() {
+  currentItems = [];
+  for (let i = 0; i < 2; i++) {
+    const randomItem = ITEM_LIST[Math.floor(Math.random() * ITEM_LIST.length)];
+    currentItems.push({ ...randomItem, soldOut: false });
+    
+    const slot = document.getElementById(`item${i}`);
+    slot.classList.remove("sold-out");
+    slot.querySelector(".item-price").textContent = `￥${randomItem.price}`;
+    
+    // アイテム画像を反映
+    const imgDiv = slot.querySelector(".item-image");
+    imgDiv.style.backgroundImage = `url(${randomItem.image})`;
+  }
+  updateShopVisuals();
+}
+
+// 所持金チェックして光らせる
+function updateShopVisuals() {
+  currentItems.forEach((item, i) => {
+    const slot = document.getElementById(`item${i}`);
+    if (!item.soldOut && money >= item.price) {
+      slot.classList.add("can-buy");
+    } else {
+      slot.classList.remove("can-buy");
+    }
+  });
+}
+
+// 購入処理
+function buyItem(index) {
+  const item = currentItems[index];
+  const currentLv = gameState.itemLevels[item.name] || 0;
+
+  // 3回制限のチェック
+  if (currentLv >= 3) {
+    alert("このアイテムは最大レベルです！");
+    return;
+  }
+
+  if (money >= item.price && !item.soldOut) {
+    money -= item.price;
+    gameState.itemLevels[item.name]++; // レベルアップ
+    
+    // 効果の適用
+    applyItemEffect(item.id, gameState.itemLevels[item.name]);
+
+    document.getElementById("money").textContent = money;
+    document.getElementById(`item${index}`).classList.add("sold-out");
+    updateShopVisuals();
+  }
+}
+
+function applyItemEffect(id, level) {
+  switch(id) {
+    case "spawn_up":
+      // 降る間隔を短くする (速くなる)
+      gameState.spawnInterval = Math.max(200, 1200 - (level * 300));
+      restartSpawnTimer();
+      break;
+    case "spawn_down":
+      // 降る間隔を長くする (遅くなる)
+      gameState.spawnInterval = 1200 + (level * 500);
+      restartSpawnTimer();
+      break;
+    case "money":
+      gameState.moneyMultiplier = 1 + (level * 0.5);
+      break;
+    case "luck_good":
+      gameState.luckGoodLevel = level; // 吉・大吉が出やすくなる
+      break;
+    case "luck_bad":
+      gameState.luckBadLevel = level;  // 凶・大凶が出やすくなる
+      break;
+  }
+}
+
+
+// おみくじ判定時にもショップを更新
+// checkDrop関数の money 更新後に updateShopVisuals(); を呼んでください
 </script>
 
 </body>
