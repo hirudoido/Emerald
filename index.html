@@ -181,6 +181,30 @@ body {
   border-radius: 8px;
   cursor: pointer;
 }
+.money-effect {
+  pointer-events: none;
+  font-weight: 900; /* より太く */
+  font-family: 'Arial Black', sans-serif;
+  text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
+  transform: translateX(-50%);
+  white-space: nowrap; /* 改行防止 */
+  animation: moneyUp 1.0s ease-out forwards; /* 少しだけ長く表示 */
+}
+
+@keyframes moneyUp {
+  0% {
+    transform: translate(-50%, 0) scale(0.5);
+    opacity: 0;
+  }
+  20% {
+    transform: translate(-50%, -20px) scale(1.2); /* 最初だけ少し膨らむ演出 */
+    opacity: 1;
+  }
+  100% {
+    transform: translate(-50%, -120px) scale(1.0);
+    opacity: 0;
+  }
+}
   /* --- おみくじの情報表示 --- */
 #info {
   /* 親の #gameScreen を基準にする */
@@ -248,7 +272,15 @@ body {
   background: rgb(187, 255, 174); /* 背景も少し黄色く */
   animation: pulse 1.0s infinite ease-in-out; /* 1.5sから1.0sに速く */
 }
-
+.item-image {
+  width: 50px;       /* 必須：幅 */
+  height: 50px;      /* 必須：高さ */
+  background-size: contain;      /* 画像を枠内に収める */
+  background-repeat: no-repeat;  /* 繰り返さない */
+  background-position: center;   /* 中央に配置 */
+  margin-bottom: 5px;
+  /* background-color: #eee; */ /* デバッグ用：これを入れて灰色になれば枠は存在しています */
+}
 @keyframes pulse {
   0% { transform: scale(1); box-shadow: 0 0 5px #00ff2f; }
   50% { transform: scale(1.08); box-shadow: 0 0 25px #00ff2f; }
@@ -287,7 +319,7 @@ body {
       <span id="money">0</span>
     </div>
     <div class="info-item timer">
-      <span id="time">30</span>
+      <span id="time">0</span>
     </div>
     <div class="info-item">
       <span class="label">数</span>
@@ -298,10 +330,12 @@ body {
     <div class="item-slot" id="item0" onclick="buyItem(0)">
       <div class="item-image"></div>
       <div class="item-price">￥0</div>
+      <div class="item-level">Lv.0</div> 
     </div>
     <div class="item-slot" id="item1" onclick="buyItem(1)">
       <div class="item-image"></div>
       <div class="item-price">￥0</div>
+      <div class="item-level">Lv.0</div> 
     </div>
     <button id="resetBtn" onclick="resetShop()">更新</button>
   </div>
@@ -322,20 +356,9 @@ body {
 
 
 </div>
-
+<script src="parameters.js"></script>
 <script>
-  // ==========================================
-//   ゲームバランス調整用パラメータ
-// ==========================================
-// --- ゲームバランス調整用 ---
-const PARAMS = {
-  gravity: 0.5,          // 重力（落下の加速速度）
-  maxFallSpeed: 7,        // 最大落下速度（リミッター）
-  friction: 0.99,         // 空気抵抗（はじいた後の減速比。1に近づくほど止まらない）
-  tossPower: 1.0005,         // はじく強さの倍率
-  bounceLimit: -0.1,      // 壁に当たった時の跳ね返り係数
-  gameTime: 30            // 制限時間（秒）
-};
+
 
 // 内部管理用変数
 let timeLeft = PARAMS.gameTime;
@@ -383,18 +406,6 @@ function endGame() {
 }
 
 
-// おみくじの種類と報酬の設定
-// ==========================================
-//   おみくじの種類・報酬・画像設定
-// ==========================================
-const OMIKUJI_TYPES = {
-  '大吉': { color: '#ff1111', goodPay: 50, badPay: 0,  image: '1.png' },
-  '吉':   { color: '#ff8800', goodPay: 30, badPay: 5,  image: '2.png' },
-  '中吉': { color: '#ffcc00', goodPay: 20, badPay: 10, image: '3.png' },
-  '小吉': { color: '#88ff00', goodPay: 15, badPay: 5,  image: '4.png' },
-  '末吉': { color: '#00ffcc', goodPay: 10, badPay: 2,  image: '5.png' },
-  '凶':   { color: '#555555', goodPay: 0,  badPay: 20, image: '6.png' }
-};
 // ==========================================
 
 
@@ -402,24 +413,30 @@ function spawnOmikuji() {
   const gameScreen = document.getElementById("gameScreen");
   const omikuji = document.createElement("div");
 
-  // 基本の抽選プール
+  // 基本のプール
   let pool = ["大吉", "吉", "中吉", "小吉", "末吉", "凶"];
 
-  // アイテムレベルに応じて特定の運勢をプールに増やす
-  for (let i = 0; i < gameState.luckGoodLevel * 3; i++) {
-    pool.push("大吉", "吉");
+  // 1. 大吉レベル：大吉のみを増やす
+  for (let i = 0; i < gameState.itemLevels["luck_daikichi"] * 5; i++) {
+    pool.push("大吉");
   }
-  for (let i = 0; i < gameState.luckBadLevel * 3; i++) {
+
+  // 2. 吉レベル：大吉と凶以外（吉・中吉・小吉・末吉）を増やす
+  for (let i = 0; i < gameState.itemLevels["luck_kichi"] * 2; i++) {
+    pool.push("吉", "中吉", "小吉", "末吉");
+  }
+
+  // 3. 凶レベル：凶のみを極端に増やす
+  for (let i = 0; i < gameState.itemLevels["luck_kyo"] * 5; i++) {
     pool.push("凶");
   }
-console.log(5);
+console.log(pool);
   const typeName = pool[Math.floor(Math.random() * pool.length)];
   const config = OMIKUJI_TYPES[typeName];
-
+  
+  // 以降、描画処理...
   omikuji.className = "omikuji";
   omikuji.dataset.type = typeName;
-  
-  // 画像の設定（config.imageがある場合）
   if (config.image) {
     omikuji.style.backgroundImage = `url(${config.image})`;
   } else {
@@ -523,10 +540,12 @@ let money = 0; // お金の変数を追加
 
 function checkDrop(omikuji) {
 
-  const rect = omikuji.getBoundingClientRect();
+const rect = omikuji.getBoundingClientRect();
+  const gameRect = document.getElementById("gameScreen").getBoundingClientRect(); // 画面の基準を取得
+  
   const goodGoal = document.getElementById("goodZone").getBoundingClientRect();
   const badGoal = document.getElementById("badZone").getBoundingClientRect();
-  
+
   const typeName = omikuji.dataset.type;
   const config = OMIKUJI_TYPES[typeName];
   let earnedMoney = 0;
@@ -544,35 +563,54 @@ function checkDrop(omikuji) {
   }
 
 if (scored) {
-    // 倍率を適用して計算
     const finalPay = Math.floor(earnedMoney * gameState.moneyMultiplier);
     money += finalPay;
     score++;
     
     document.getElementById("money").textContent = money;
     updateShopVisuals();
-    showMoneyEffect(rect.left, rect.top, finalPay);
+
+    // 相対座標の計算
+    const relativeX = rect.left - gameRect.left + (rect.width / 2);
+    const relativeY = rect.top - gameRect.top;
+
+    // 【ここを修正】金額に応じてサイズを計算 (最小20px、最大値777円の時に巨大になるよう設定)
+    // 20px (基本) + (金額 / 777 * 60px) くらいの計算にすると、最大80px程度になります
+    const fontSize = Math.min(50, 10 + (finalPay / 777) * 100);
+
+    showMoneyEffect(relativeX, relativeY, finalPay, fontSize);
     omikuji.remove();
   }
 }
 
 // 金額が浮き出る演出
-function showMoneyEffect(x, y, amount) {
+function showMoneyEffect(x, y, amount, size) {
+  const gameScreen = document.getElementById("gameScreen");
   const effect = document.createElement("div");
-  effect.textContent = "+" + amount;
+  
+  effect.textContent = (amount >= 0 ? "+" : "") + amount;
+  effect.className = "money-effect";
+  
+  // 位置と【サイズ】の設定
   effect.style.position = "absolute";
   effect.style.left = x + "px";
   effect.style.top = y + "px";
-  effect.style.color = amount > 0 ? "#ffcc00" : "#ff4444";
-  effect.style.fontWeight = "bold";
-  effect.style.zIndex = 200;
-  effect.animate([
-    { transform: 'translateY(0)', opacity: 1 },
-    { transform: 'translateY(-50px)', opacity: 0 }
-  ], { duration: 800 });
+  effect.style.fontSize = size + "px"; // 動的なサイズ適用
   
-  document.getElementById("gameScreen").appendChild(effect);
-  setTimeout(() => effect.remove(), 800);
+  // 金額が大きいほど色を豪華にする演出（オプション）
+  if (amount >= 777) {
+    effect.style.color = "#7fffd4"; // ラッキーセブンは特別色
+    effect.style.textShadow = "0 0 10px #fff, 0 0 20px #ff00ff";
+  } else {
+    effect.style.color = amount > 0 ? "#eaff00" : "#7dffa6";
+  }
+  
+  effect.style.zIndex = 200;
+  gameScreen.appendChild(effect);
+  
+  effect.addEventListener('animationend', () => {
+    effect.remove();
+  });
 }
 
 function isOverlap(a, b) {
@@ -603,17 +641,7 @@ function checkPlate(omikuji) {
   return false;
 }
 
-// アイテムデータ
-// --- ゲームの状態・アイテムレベル (最大3) ---
-// --- ゲームの状態管理（初期値を設定） ---
-const gameState = {
-  spawnInterval: 500, // 最初は1.2秒に1回
-  spawnRateLevel: 0,
-  moneyMultiplier: 1,
-  luckGoodLevel: 0,
-  luckBadLevel: 0,
-  itemLevels: {}
-};
+
 
 let spawnTimer = null; // タイマーを保持する変数
 
@@ -627,18 +655,10 @@ function restartSpawnTimer() {
   // gameStateに設定された間隔でおみくじを降らせる
   spawnTimer = setInterval(() => {
     spawnOmikuji();
-    console.log("おみくじを降らせました");
+    console.log("おみくじを降らせました", gameState.spawnInterval );
   }, gameState.spawnInterval || 1200);
 }
-// アイテムリストを効果付きで更新
 
-const ITEM_LIST = [
-  { id: "spawn_up",   name: "降る量アップ", price: 15, image: "daikichi.png" },
-  { id: "spawn_down", name: "降る量ダウン", price: 10, image: "sp_down.png" }, // 追加
-  { id: "money",      name: "報酬アップ",   price: 20, image: "money.png" },
-  { id: "luck_good",  name: "吉の確率アップ", price: 20, image: "luck_kichi.png" }, // 追加
-  { id: "luck_bad",   name: "大凶の確率アップ", price: 12, image: "luck_kyo.png" }   // 追加
-];
 
 
 let currentItems = [];
@@ -646,17 +666,33 @@ let currentItems = [];
 // ショップの更新（ランダムに2つ選ぶ）
 function resetShop() {
   currentItems = [];
+  const shopContainer = document.getElementById("shopContainer");
+  
   for (let i = 0; i < 2; i++) {
     const randomItem = ITEM_LIST[Math.floor(Math.random() * ITEM_LIST.length)];
-    currentItems.push({ ...randomItem, soldOut: false });
+    // 現在のレベルを取得
+    const currentLv = gameState.itemLevels[randomItem.id] || 0;
+    
+    // 売り切れ判定：このアイテムのレベルが既に3なら最初から売り切れにする
+    const isMax = currentLv >= 3;
+    
+    currentItems.push({ ...randomItem, soldOut: isMax });
     
     const slot = document.getElementById(`item${i}`);
     slot.classList.remove("sold-out");
+    if (isMax) slot.classList.add("sold-out");
+
+    // 価格とレベルの表示（Lv.1 / 3 のように出すと分かりやすいです）
     slot.querySelector(".item-price").textContent = `￥${randomItem.price}`;
+    slot.querySelector(".item-level").textContent = `Lv.${currentLv}`;
+
+    // アイテム名の横や下にレベルを表示したい場合は、HTMLに専用の枠を作るか、
+    // 以下のようにテキストを書き換えます
+    const nameEl = slot.querySelector(".item-name") || slot; 
+    // ※item-nameというクラスをHTMLに追加することをお勧めします
     
-    // アイテム画像を反映
     const imgDiv = slot.querySelector(".item-image");
-    imgDiv.style.backgroundImage = `url(${randomItem.image})`;
+    if (imgDiv) imgDiv.style.backgroundImage = `url('${randomItem.image}')`;
   }
   updateShopVisuals();
 }
@@ -665,6 +701,7 @@ function resetShop() {
 function updateShopVisuals() {
   currentItems.forEach((item, i) => {
     const slot = document.getElementById(`item${i}`);
+
     if (!item.soldOut && money >= item.price) {
       slot.classList.add("can-buy");
     } else {
@@ -676,20 +713,45 @@ function updateShopVisuals() {
 // 購入処理
 function buyItem(index) {
   const item = currentItems[index];
-  const currentLv = gameState.itemLevels[item.name] || 0;
-
-  // 3回制限のチェック
-  if (currentLv >= 3) {
-    alert("このアイテムは最大レベルです！");
-    return;
-  }
+  const id = item.id;
 
   if (money >= item.price && !item.soldOut) {
     money -= item.price;
-    gameState.itemLevels[item.name]++; // レベルアップ
     
-    // 効果の適用
-    applyItemEffect(item.id, gameState.itemLevels[item.name]);
+    // 自レベルアップ (最大3)
+    if (gameState.itemLevels[id] < 3) {
+      gameState.itemLevels[id]++;
+    }
+
+    // --- ここから「降る量」の排他ロジック ---
+    if (id === "spawn_up") {
+      // アップを買ったらダウンを1下げる
+      gameState.itemLevels["spawn_down"] = Math.max(0, gameState.itemLevels["spawn_down"] - 1);
+    } else if (id === "spawn_down") {
+      // ダウンを買ったらアップを1下げる
+      gameState.itemLevels["spawn_up"] = Math.max(0, gameState.itemLevels["spawn_up"] - 1);
+    }
+    // ------------------------------------
+
+    // 運勢系の排他ロジック（前回の分も維持）
+    if (id === "luck_daikichi") {
+      gameState.itemLevels["luck_kichi"] = Math.max(0, gameState.itemLevels["luck_kichi"] - 1);
+      gameState.itemLevels["luck_kyo"] = Math.max(0, gameState.itemLevels["luck_kyo"] - 1);
+    } else if (id === "luck_kichi") {
+      gameState.itemLevels["luck_daikichi"] = Math.max(0, gameState.itemLevels["luck_daikichi"] - 1);
+      gameState.itemLevels["luck_kyo"] = Math.max(0, gameState.itemLevels["luck_kyo"] - 1);
+    } else if (id === "luck_kyo") {
+      gameState.itemLevels["luck_daikichi"] = Math.max(0, gameState.itemLevels["luck_daikichi"] - 1);
+      gameState.itemLevels["luck_kichi"] = Math.max(0, gameState.itemLevels["luck_kichi"] - 1);
+    }
+
+    item.soldOut = true;
+    
+    // 【重要】即時反映：現在のIDの効果を適用
+    applyItemEffect(id, gameState.itemLevels[id]);
+    // 打ち消し合った相手の効果も再計算（間隔を戻すため）
+    if(id === "spawn_up") applyItemEffect("spawn_down", gameState.itemLevels["spawn_down"]);
+    if(id === "spawn_down") applyItemEffect("spawn_up", gameState.itemLevels["spawn_up"]);
 
     document.getElementById("money").textContent = money;
     document.getElementById(`item${index}`).classList.add("sold-out");
@@ -698,32 +760,38 @@ function buyItem(index) {
 }
 
 function applyItemEffect(id, level) {
+  console.log(`効果適用：${id}, レベル：${level}`);
+
   switch(id) {
+    // 降る量に関連するIDなら、両方のレベルを考慮して間隔を再計算
     case "spawn_up":
-      // 降る間隔を短くする (速くなる)
-      gameState.spawnInterval = Math.max(200, 1200 - (level * 300));
-      restartSpawnTimer();
-      break;
     case "spawn_down":
-      // 降る間隔を長くする (遅くなる)
-      gameState.spawnInterval = 1200 + (level * 500);
-      restartSpawnTimer();
+      const upLv = gameState.itemLevels["spawn_up"] || 0;
+      const downLv = gameState.itemLevels["spawn_down"] || 0;
+      
+      // 基本1200ms。アップ1につき-300ms、ダウン1につき+500ms
+      // (例: アップLv1, ダウンLv0 => 900ms)
+      // (例: アップLv1, ダウンLv1 => 1400ms ※打ち消し合いが起こるのでこのケースは基本ないはず)
+      let newInterval = 1200 - (upLv * 300) + (downLv * 500);
+      
+      // 速すぎ・遅すぎの制限
+      gameState.spawnInterval = Math.max(200, Math.min(3000, newInterval));
+      
+      console.log(`新しい降る間隔: ${gameState.spawnInterval}ms`);
+      restartSpawnTimer(); // 即座に新しい間隔で再始動
       break;
+
     case "money":
       gameState.moneyMultiplier = 1 + (level * 0.5);
       break;
-    case "luck_good":
-      gameState.luckGoodLevel = level; // 吉・大吉が出やすくなる
-      break;
-    case "luck_bad":
-      gameState.luckBadLevel = level;  // 凶・大凶が出やすくなる
+      
+    // 運勢系は spawnOmikuji 側がレベルを直接参照するのでここではログのみ
+    case "luck_daikichi":
+    case "luck_kichi":
+    case "luck_kyo":
       break;
   }
 }
-
-
-// おみくじ判定時にもショップを更新
-// checkDrop関数の money 更新後に updateShopVisuals(); を呼んでください
 </script>
 
 </body>
