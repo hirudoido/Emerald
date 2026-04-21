@@ -44,8 +44,8 @@ itemLevels: {
 
 const ITEM_LIST = [
   { id: "spawn_up",   name: "降る量アップ", price: 15, image: "daikichi.jpg" },
-  { id: "spawn_down", name: "降る量ダウン", price: 10, image: "1.png" }, // 追加
-  { id: "money",      name: "報酬アップ",   price: 20, image: "77.png" },
+  { id: "spawn_down", name: "降る量ダウン", price: 10, image: ".png" }, // 追加
+  { id: "money",      name: "報酬アップ",   price: 20, image: "kin.png" },
   { id: "luck_daikichi", name: "大吉の加護", price: 20, image: "1.png" },
   { id: "luck_kichi",    name: "吉の加護",   price: 15, image: "2.png" },
   { id: "luck_kyo",      name: "凶の呪い",   price: 10, image: "6.png" }
