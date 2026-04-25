@@ -8,7 +8,7 @@ const PARAMS = {
   friction: 0.99,         // 空気抵抗（はじいた後の減速比。1に近づくほど止まらない）
   tossPower: 1.0005,         // はじく強さの倍率
   bounceLimit: -0.1,      // 壁に当たった時の跳ね返り係数
-  gameTime: 60,            // 制限時間（秒）
+  gameTime: 2,            // 制限時間（秒）
 };
 
 // おみくじの種類と報酬の設定
@@ -27,7 +27,7 @@ const OMIKUJI_TYPES = {
 // --- ゲームの状態・アイテムレベル (最大3) ---
 // --- ゲームの状態管理（初期値を設定） ---
 const gameState = {
-  spawnInterval: 500, // 最初は1.2秒に1回
+  spawnInterval: 600, // 最初は1.2秒に1回
   spawnRateLevel: 0,
   moneyMultiplier: 1,
 

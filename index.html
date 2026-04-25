@@ -253,6 +253,7 @@ body {
 }
 
 .item-slot {
+  position: relative;
   width: 80px;
   height: 100px;
   background: rgba(255, 255, 255, 0.9);
@@ -263,7 +264,14 @@ body {
   align-items: center;
   justify-content: space-around;
 }
-
+.item-level {
+  position: absolute;
+  top: 2px;
+  right: 5px;
+  font-size: 12px;
+  font-weight: bold;
+  color: #0b0b0b;
+}
 /* 買える時に光る演出 */
 /* 買える時に光る演出（より目立たせる） */
 .item-slot.can-buy {
@@ -288,11 +296,17 @@ body {
 }
 
 /* 売り切れ状態 */
+/* 既存の sold-out を少し強化 */
 .item-slot.sold-out {
   background: #555 !important;
-  box-shadow: none !important;
-  animation: none !important;
+  opacity: 0.7;
+  filter: grayscale(1);
   pointer-events: none;
+  
+  /* 膨張と光を強制的に上書きして消す */
+  animation: none !important; 
+  box-shadow: none !important;
+  transform: scale(1) !important; 
 }
 .item-slot.sold-out::after {
   content: "SOLD OUT";
@@ -303,11 +317,75 @@ body {
 
 #resetBtn {
   padding: 10px;
-  background: #ff4444;
+  background: #444;
   color: white;
-  border: none;
+  border: 2px solid #888;
   border-radius: 5px;
   font-weight: bold;
+  cursor: pointer;
+  transition: 0.3s;
+  min-width: 80px;
+}
+
+/* 更新ができる時に光る */
+.can-buy-reset {
+  border-color: #00ffcc !important;
+  box-shadow: 0 0 15px #00ffcc;
+  background: #006655 !important;
+  animation: pulse-reset 1.2s infinite;
+}
+
+@keyframes pulse-reset {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+  100% { transform: scale(1); }
+}
+/* --- おみくじの結果表示 --- */
+#resultScreen {
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  background: rgba(0, 0, 0, 0.85); /* 背景を暗くして文字を目立たせる */
+  color: white;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  text-align: center;
+}
+
+#resultScreen h2 {
+  font-size: 32px;
+  color: #ffcc00;
+  margin-bottom: 20px;
+}
+
+.result-stats {
+  font-size: 24px;
+  margin-bottom: 30px;
+}
+
+.result-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.result-buttons button {
+  padding: 15px 30px;
+  font-size: 18px;
+  font-weight: bold;
+  cursor: pointer;
+  border-radius: 50px;
+  border: none;
+  background: #fff;
+  transition: 0.2s;
+}
+
+.result-buttons button:hover {
+  transform: scale(1.1);
+  background: #ffcc00;
 }
 </style>
 </head>
@@ -319,7 +397,7 @@ body {
       <span id="money">0</span>
     </div>
     <div class="info-item timer">
-      <span id="time">0</span>
+      <span id="time">50</span>
     </div>
     <div class="info-item">
       <span class="label">数</span>
@@ -337,7 +415,7 @@ body {
       <div class="item-price">￥0</div>
       <div class="item-level">Lv.0</div> 
     </div>
-    <button id="resetBtn" onclick="resetShop()">更新</button>
+    <button id="resetBtn" onclick="attemptReset()">更新 ￥2</button>
   </div>
 <!-- モード選択画面 -->
 
@@ -349,6 +427,18 @@ body {
     </div>
   </div>
 
+<div id="resultScreen" style="display: none;">
+  <h2>業務終了</h2>
+  <div class="result-stats">
+    <p>入れた数: <span id="finalCount">0</span>個</p>
+    <p>稼いだ額: ￥<span id="finalMoney">0</span></p>
+  </div>
+  
+  <div class="result-buttons">
+    <button onclick="restartGame()">もう一度プレイ</button>
+    <button onclick="goToTitle()">タイトルへ戻る</button>
+  </div>
+</div>
 
   <div id="badZone" style="display:none;">悪い</div>
   <div id="goodZone" style="display:none;">良い</div>
@@ -369,6 +459,7 @@ let dragging = null;
 
 
 document.getElementById("startBtn").onclick = () => {
+  console.log(spawnTimer !== null);
   // すでにゲームが始まっていたら何もしない（連打防止）
   if (spawnTimer !== null) return; 
 
@@ -380,29 +471,104 @@ document.getElementById("startBtn").onclick = () => {
   document.getElementById("badZone").style.display = "block";
   document.getElementById("goodZone").style.display = "block";
   document.getElementById("plate").style.display = "block";
-
-  resetShop();
-  
+  // --- 【ここを追加】初期アイテムの補充 ---
+  shopResetCost = 2; // コストをリセット
+  document.getElementById("resetBtn").textContent = `更新 ￥${shopResetCost}`;
+  performReset(); // 最初のアイテムを並べる
+  // --------------------------------------
   // 初期の間隔を設定してタイマー起動
-  gameState.spawnInterval = 1200; 
+ // gameState.spawnInterval = 1200; 
   restartSpawnTimer(); 
   
   startGame(); // タイムカウントダウンなど
 };
 
+// 例：カウントダウンタイマーのイメージ
 function startGame() {
-  gameInterval = setInterval(() => {
+
+  gameTimerId = setInterval(() => {
     timeLeft--;
     document.getElementById("time").textContent = timeLeft;
-    if (timeLeft <= 0) endGame();
+    
+    if (timeLeft <= 0) {
+      clearInterval(gameTimerId);
+      gameTimerId = null;
+      endGame();
+    }
   }, 1000);
-
 }
 
+// --- タイムアップ時の処理 ---
 function endGame() {
-  clearInterval(gameInterval);
-  clearInterval(fallInterval);
-  alert("ゲーム終了！ 入れた数：" + score);
+  // 1. 全てのタイマーを止める
+  if (spawnTimer) {
+    clearInterval(spawnTimer);
+    spawnTimer = null;
+  }
+  if (gameTimerId) {
+    clearInterval(gameTimerId);
+    gameTimerId = null;
+  }
+
+  // 2. 【追加】画面上のおみくじを全削除
+  const activeOmikujis = document.querySelectorAll('.omikuji');
+  activeOmikujis.forEach(o => o.remove());
+
+  // 3. スコア反映と表示切り替え
+  document.getElementById("finalCount").textContent = score;
+  document.getElementById("finalMoney").textContent = money;
+  document.getElementById("resultScreen").style.display = "flex";
+  document.getElementById("shopContainer").style.display = "none";
+}
+// --- ボタンの処理：もう一度プレイ ---
+function restartGame() {
+  // レベルのリセット
+  resetAllItemLevels();
+
+  // ゲームデータの初期化
+  score = 0;
+  money = 0;
+  timeLeft = 10;
+  shopResetCost = 2;
+  
+  // UI更新
+  document.getElementById("money").textContent = money;
+  document.getElementById("score").textContent = score;
+  document.getElementById("resultScreen").style.display = "none";
+  document.getElementById("shopContainer").style.display = "flex";
+
+  // ショップをまっさらな状態で補充
+  performReset();
+  
+  // ゲーム開始
+  restartSpawnTimer();
+  startGame();
+}
+
+// --- ボタンの処理：タイトルへ戻る ---
+function goToTitle() {
+  // タイマー停止と掃除
+  if (spawnTimer) { clearInterval(spawnTimer); spawnTimer = null; }
+  if (gameTimerId) { clearInterval(gameTimerId); gameTimerId = null; }
+  document.querySelectorAll('.omikuji').forEach(o => o.remove());
+
+  // 【重要】レベルのリセット
+  resetAllItemLevels();
+
+  // 数値と表示のリセット
+  money = 0;
+  score = 0;
+  timeLeft = 10;
+  shopResetCost = 2;
+
+  // 画面の切り替え
+    // UI更新
+  document.getElementById("money").textContent = money;
+  document.getElementById("score").textContent = score;
+  document.getElementById("resultScreen").style.display = "none";
+  document.getElementById("info").style.display = "none";
+  document.getElementById("shopContainer").style.display = "none";
+  document.getElementById("modeSelect").style.display = "flex";
 }
 
 
@@ -412,7 +578,14 @@ function endGame() {
 function spawnOmikuji() {
   const gameScreen = document.getElementById("gameScreen");
   const omikuji = document.createElement("div");
+// --- 【追加】最大数制限 (例: 50個まで) ---
+  const currentCount = document.querySelectorAll('.omikuji').length;
+  const MAX_OMIKUJI = 50; 
 
+  if (currentCount >= MAX_OMIKUJI) {
+    // すでに上限なら、今回は生成せずに終了する
+    return;
+  }
   // 基本のプール
   let pool = ["大吉", "吉", "中吉", "小吉", "末吉", "凶"];
 
@@ -664,16 +837,30 @@ function restartSpawnTimer() {
 let currentItems = [];
 
 // ショップの更新（ランダムに2つ選ぶ）
-function resetShop() {
+
+
+
+
+// ボタンが押された時の専用関数を作ると分かりやすいです
+function attemptReset() {
+  if (money >= shopResetCost) {
+    money -= shopResetCost;
+    shopResetCost += 3; // 次回コストを+3円
+    
+    // UI更新
+    document.getElementById("money").textContent = money;
+    
+    // アイテム入れ替え実行
+    performReset(); 
+  }
+}
+
+// 実際の入れ替え処理
+function performReset() {
   currentItems = [];
-  const shopContainer = document.getElementById("shopContainer");
-  
   for (let i = 0; i < 2; i++) {
     const randomItem = ITEM_LIST[Math.floor(Math.random() * ITEM_LIST.length)];
-    // 現在のレベルを取得
     const currentLv = gameState.itemLevels[randomItem.id] || 0;
-    
-    // 売り切れ判定：このアイテムのレベルが既に3なら最初から売り切れにする
     const isMax = currentLv >= 3;
     
     currentItems.push({ ...randomItem, soldOut: isMax });
@@ -682,80 +869,122 @@ function resetShop() {
     slot.classList.remove("sold-out");
     if (isMax) slot.classList.add("sold-out");
 
-    // 価格とレベルの表示（Lv.1 / 3 のように出すと分かりやすいです）
+    // テキスト反映
     slot.querySelector(".item-price").textContent = `￥${randomItem.price}`;
-    slot.querySelector(".item-level").textContent = `Lv.${currentLv}`;
-
-    // アイテム名の横や下にレベルを表示したい場合は、HTMLに専用の枠を作るか、
-    // 以下のようにテキストを書き換えます
-    const nameEl = slot.querySelector(".item-name") || slot; 
-    // ※item-nameというクラスをHTMLに追加することをお勧めします
+    slot.querySelector(".item-level").textContent = `Lv.${currentLv}`; // Lvを表示
     
     const imgDiv = slot.querySelector(".item-image");
     if (imgDiv) imgDiv.style.backgroundImage = `url('${randomItem.image}')`;
   }
+  document.getElementById("resetBtn").textContent = `更新 ￥${shopResetCost}`;
   updateShopVisuals();
 }
 
 // 所持金チェックして光らせる
 function updateShopVisuals() {
+  // アイテムの光る判定
   currentItems.forEach((item, i) => {
     const slot = document.getElementById(`item${i}`);
-
     if (!item.soldOut && money >= item.price) {
       slot.classList.add("can-buy");
     } else {
       slot.classList.remove("can-buy");
     }
   });
-}
 
-// 購入処理
+  // 【追加】更新ボタンの光る判定
+  const resetBtn = document.getElementById("resetBtn");
+  if (money >= shopResetCost) {
+    resetBtn.classList.add("can-buy-reset");
+  } else {
+    resetBtn.classList.remove("can-buy-reset");
+  }
+}
 function buyItem(index) {
   const item = currentItems[index];
   const id = item.id;
+  const currentLv = gameState.itemLevels[id] || 0;
 
-  if (money >= item.price && !item.soldOut) {
+  // 1. 購入制限チェック
+  if (currentLv >= 3 || item.soldOut) return;
+
+  if (money >= item.price) {
     money -= item.price;
     
-    // 自レベルアップ (最大3)
-    if (gameState.itemLevels[id] < 3) {
-      gameState.itemLevels[id]++;
-    }
+    // 2. 自身のレベルを上げる
+    gameState.itemLevels[id]++;
 
-    // --- ここから「降る量」の排他ロジック ---
-    if (id === "spawn_up") {
-      // アップを買ったらダウンを1下げる
-      gameState.itemLevels["spawn_down"] = Math.max(0, gameState.itemLevels["spawn_down"] - 1);
-    } else if (id === "spawn_down") {
-      // ダウンを買ったらアップを1下げる
-      gameState.itemLevels["spawn_up"] = Math.max(0, gameState.itemLevels["spawn_up"] - 1);
-    }
-    // ------------------------------------
+    // 3. 【重要】排他ロジック（他方のレベルを下げる）を実行
+    handleExclusion(id);
 
-    // 運勢系の排他ロジック（前回の分も維持）
-    if (id === "luck_daikichi") {
-      gameState.itemLevels["luck_kichi"] = Math.max(0, gameState.itemLevels["luck_kichi"] - 1);
+    // 4. 購入したスロットを「この回は売り切れ」にする
+    item.soldOut = true;
+
+    // 5. お金の表示を更新
+    document.getElementById("money").textContent = money;
+
+    // 6. 【ここが解決策】ショップに並んでいる全スロットの見た目を最新状態にする
+    refreshShopUI(); 
+    
+    // 7. 効果を即反映
+    applyItemEffect(id, gameState.itemLevels[id]);
+  }
+}
+function refreshShopUI() {
+  currentItems.forEach((item, i) => {
+    const slot = document.getElementById(`item${i}`);
+    const currentLv = gameState.itemLevels[item.id] || 0;
+
+    // レベル表示を最新にする
+    const lvDiv = slot.querySelector(".item-level");
+    if (lvDiv) lvDiv.textContent = `Lv.${currentLv}`;
+
+    // 売り切れ判定の更新
+    // 「今回買った」または「累計レベルが3に達している」なら sold-out クラスをつける
+    if (item.soldOut || currentLv >= 3) {
+      slot.classList.add("sold-out");
+    } else {
+      slot.classList.remove("sold-out");
+      slot.classList.remove("can-buy");
+
+    }
+  });
+
+  // 更新ボタンの光りかたなどもチェック
+  updateShopVisuals();
+}
+// 排他ロジックを整理
+
+function handleExclusion(id) {
+  let targetId = null;
+
+  // 降る量のペア
+  if (id === "spawn_up") targetId = "spawn_down";
+  if (id === "spawn_down") targetId = "spawn_up";
+
+  // 運勢のペア（大吉・吉・凶）
+  if (id === "luck_daikichi") {
+    gameState.itemLevels["luck_kichi"] = Math.max(0, gameState.itemLevels["luck_kichi"] - 1);
+    gameState.itemLevels["luck_kyo"] = Math.max(0, gameState.itemLevels["luck_kyo"] - 1);
+    applyItemEffect("luck_kichi", gameState.itemLevels["luck_kichi"]);
+    applyItemEffect("luck_kyo", gameState.itemLevels["luck_kyo"]);
+  }else if (id === "luck_kichi") {
+     gameState.itemLevels["luck_daikichi"] = Math.max(0, gameState.itemLevels["luck_daikichi"] - 1);
       gameState.itemLevels["luck_kyo"] = Math.max(0, gameState.itemLevels["luck_kyo"] - 1);
-    } else if (id === "luck_kichi") {
-      gameState.itemLevels["luck_daikichi"] = Math.max(0, gameState.itemLevels["luck_daikichi"] - 1);
-      gameState.itemLevels["luck_kyo"] = Math.max(0, gameState.itemLevels["luck_kyo"] - 1);
+          applyItemEffect("luck_daikichi", gameState.itemLevels["luck_daikichi"]);
+    applyItemEffect("luck_kyo", gameState.itemLevels["luck_kyo"]);
     } else if (id === "luck_kyo") {
       gameState.itemLevels["luck_daikichi"] = Math.max(0, gameState.itemLevels["luck_daikichi"] - 1);
       gameState.itemLevels["luck_kichi"] = Math.max(0, gameState.itemLevels["luck_kichi"] - 1);
+          applyItemEffect("luck_kichi", gameState.itemLevels["luck_kichi"]);
+    applyItemEffect("luck_daikichi", gameState.itemLevels["luck_daikichi"]);
     }
+  // ...吉、凶の場合も同様に書く...
 
-    item.soldOut = true;
-    
-    // 【重要】即時反映：現在のIDの効果を適用
-    applyItemEffect(id, gameState.itemLevels[id]);
-    // 打ち消し合った相手の効果も再計算（間隔を戻すため）
-    if(id === "spawn_up") applyItemEffect("spawn_down", gameState.itemLevels["spawn_down"]);
-    if(id === "spawn_down") applyItemEffect("spawn_up", gameState.itemLevels["spawn_up"]);
-
-    document.getElementById("money").textContent = money;
-    document.getElementById(`item${index}`).classList.add("sold-out");
-    updateShopVisuals();
+  if (targetId) {
+    gameState.itemLevels[targetId] = Math.max(0, gameState.itemLevels[targetId] - 1);
+    // レベルが下がった方の効果も即座に再計算して反映
+    applyItemEffect(targetId, gameState.itemLevels[targetId]);
   }
 }
 
@@ -791,6 +1020,19 @@ function applyItemEffect(id, level) {
     case "luck_kyo":
       break;
   }
+}
+function resetAllItemLevels() {
+  // すべてのアイテムIDを0にリセット
+  const ids = ["spawn_up", "spawn_down", "money", "luck_daikichi", "luck_kichi", "luck_kyo"];
+  ids.forEach(id => {
+    gameState.itemLevels[id] = 0;
+  });
+
+  // 倍率や間隔も初期値に戻す
+  gameState.moneyMultiplier = 1;
+  gameState.spawnInterval = 1200;
+  
+  console.log("アイテムレベルをすべてリセットしました");
 }
 </script>
 
