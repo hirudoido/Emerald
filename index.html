@@ -31,6 +31,28 @@ body {
   border-radius: 10px;
   touch-action: none; /* ゲーム内操作を優先 [cite: 6] */
 }
+#resizeHandle {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 30px;      /* 掴みやすい太さ */
+  background: linear-gradient(transparent, rgba(0,0,0,0.2)); /* 視覚的なガイド */
+  cursor: ns-resize; /* 上下リサイズのカーソル */
+  z-index: 2000;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+/* ハンドルの中央に「つまみ」の線を表示 */
+#resizeHandle::after {
+  content: "";
+  width: 40px;
+  height: 4px;
+  background: #888;
+  border-radius: 2px;
+}
 
 /* --- 3. 判定ゾーンのレスポンシブ化 --- */
 /* --- 判定ゾーンをサッカーゴール風に --- */
@@ -425,6 +447,9 @@ body {
       <button id="startBtn" class="menu-btn">スタート</button>
       <button class="menu-btn">今はなし</button>
     </div>
+
+  <div id="resizeHandle"></div>
+
   </div>
 
 <div id="resultScreen" style="display: none;">
@@ -1034,6 +1059,52 @@ function resetAllItemLevels() {
   
   console.log("アイテムレベルをすべてリセットしました");
 }
+
+
+const gameScreen = document.getElementById("gameScreen");
+const resizeHandle = document.getElementById("resizeHandle");
+
+let isResizing = false;
+
+// --- マウス・タッチ開始 ---
+const startResize = (e) => {
+  isResizing = true;
+  document.body.style.cursor = "ns-resize";
+  e.preventDefault();
+};
+
+// --- 移動中 ---
+const doResize = (e) => {
+  if (!isResizing) return;
+
+  // タッチ操作とマウス操作の両方に対応
+  const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+  
+  // gameScreenの上端からの距離を計算して高さに設定
+  const rect = gameScreen.getBoundingClientRect();
+  const newHeight = clientY - rect.top;
+
+  // 最小・最大制限を守りつつ反映
+  if (newHeight > 400 && newHeight < window.innerHeight * 0.98) {
+    gameScreen.style.height = newHeight + "px";
+  }
+};
+
+// --- 終了 ---
+const stopResize = () => {
+  isResizing = false;
+  document.body.style.cursor = "default";
+};
+
+// イベント登録
+resizeHandle.addEventListener("mousedown", startResize);
+resizeHandle.addEventListener("touchstart", startResize);
+
+window.addEventListener("mousemove", doResize);
+window.addEventListener("touchmove", doResize, { passive: false });
+
+window.addEventListener("mouseup", stopResize);
+window.addEventListener("touchend", stopResize);
 </script>
 
 </body>
