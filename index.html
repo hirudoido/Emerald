@@ -103,8 +103,10 @@ body {
   top: -15px;           /* 厚みの分だけ上に配置 */
   left: 0;
   width: 100%;
-  height: 15px;
-  background: #824242;  /* 上面は光が当たって明るい色 */
+  height: 45%;
+  background: #9d3434;  /* 上面は光が当たって明るい色 */
+  transition: filter 0.3s ease; /* 色変化を滑らかに */
+  overflow: hidden;
   border-radius: 4px 4px 0 0;
   transform: perspective(100px) rotateX(40deg); /* 奥行きを出すマジック */
 }
@@ -124,6 +126,31 @@ body {
   height: 100%;
   background: #9e9e9e;
   clip-path: polygon(10% 0%, 90% 0%, 100% 100%, 0% 100%); /* 台形にする */
+}
+#plateCrack {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  opacity:0; /* 最初は見えない */
+  background-image: url('44.png'); /* ヒビ模様のテクスチャ */
+  background-size: cover;
+  mix-blend-mode: multiply; /* お皿の絵となじませる */
+  transition: opacity 0.5s ease;
+}
+@keyframes shake {
+  0% { margin-left: 0; }
+  25% { margin-left: 2px; }
+  50% { margin-left: -2px; }
+  75% { margin-left: 2px; }
+  100% { margin-left: 0; }
+}
+
+.shake-anime {
+  /* positionが絶対配置でも影響しにくいmarginで震えさせます */
+  animation: shake 0.1s infinite;
 }
 /* --- おみくじのサイズも調整 --- */
 /* --- おみくじのサイズ固定 --- */
@@ -147,6 +174,13 @@ body {
   color: #fff; /* 文字色 */
   font-weight: bold;
   font-size: 1.5vw;
+
+
+  /* ドラッグしやすくするため、タッチ時の挙動を制限 */
+  touch-action: none;
+  cursor: grab;
+  /* 色が赤に固定されていたので、クラスで指定できるように変更 */
+
 }
 /* 文字選択と長押しメニューを完全に禁止 */
 * {
@@ -154,12 +188,7 @@ body {
   -webkit-user-select: none;
   -webkit-touch-callout: none;
 }
-.omikuji {
-  /* ドラッグしやすくするため、タッチ時の挙動を制限 */
-  touch-action: none;
-  cursor: grab;
-  /* 色が赤に固定されていたので、クラスで指定できるように変更 */
-}
+
 .good { background-color: #ff4444; }
 .bad { background-color: #4444ff; }
 
@@ -234,7 +263,7 @@ body {
   top: 0;
   left: 0;
   width: 100%;
-  height: 6%; /* 少し高さを出すとバランスが良いです */
+  height: 10%; /* 少し高さを出すとバランスが良いです */
   display: flex;
   justify-content: space-around;
   align-items: center;
@@ -256,6 +285,13 @@ body {
   font-size: 2%;
   color: #ffcc00;
   font-weight: bold;
+}
+.status-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  color: white;
+  text-shadow: 1px 1px 3px #000;
 }
 
 #time, #money, #score {
@@ -409,23 +445,78 @@ body {
   transform: scale(1.1);
   background: #ffcc00;
 }
+#missionTimerBar{
+  width: 100%;
+  height: 10px;
+  background: #444;
+  border-radius: 5px;
+  overflow: hidden;
+}
+
+
+#missionTextDisplay {
+  font-size: 14px;
+  color: #00ffcc;
+  text-shadow: 1px 1px 2px #000;
+  margin-top: 5px;
+  font-weight: bold;
+  white-space: nowrap;
+}
+#timeContainer {
+  display: flex;
+  flex-direction: column; /* 縦に並べる */
+  align-items: center;    /* 中央揃え */
+  justify-content: center;
+  min-height: 80px;       /* 領域を確保して重なりを防ぐ */
+}
+/* 耐久力バーのレイアウト調整 */
+#time {
+  font-size: 42px;
+  line-height: 1;
+  font-weight: bold;
+  color: #fff;
+  margin-bottom: -1px;
+}
+
+#missionTextDisplay {
+  font-size: 14px;
+  color: #00ffcc;
+  background: rgba(0, 0, 0, 0.6); /* 背景を黒透過にして読みやすく */
+  padding: 4px 12px;
+  border-radius: 15px;
+  border: 1px solid #00ffcc;
+  white-space: nowrap;    /* 改行させない */
+  box-shadow: 0 0 10px rgba(0, 255, 204, 0.3); /* ほんのり光らせる */
+}
+
+
+
+
+.omikuji.on-plate {
+  filter: drop-shadow(0 0 10px gold) !important;
+  border: 2px solid gold !important;
+}
 </style>
 </head>
 <body>
 <div id="gameScreen">
-  <div id="info" style="display:none;">
-    <div class="info-item">
-      <span class="label">￥</span>
-      <span id="money">0</span>
-    </div>
-    <div class="info-item timer">
-      <span id="time">50</span>
-    </div>
-    <div class="info-item">
-      <span class="label">数</span>
-      <span id="score">0</span>
-    </div>
+<div id="info" style="display: none;">
+  <div class="status-box side">
+    <div id="scoreLabel" style="font-size: 10px;">入れた数</div>
+    <div id="score" style="font-size: 20px; font-weight: bold;">0</div>
   </div>
+
+  <div class="status-box center" id="timeContainer">
+    <div id="time">60</div>
+    <div id="missionTextDisplay" style="display: none;"></div>
+  </div>
+
+  <div class="status-box side">
+    <div style="font-size: 10px;">所持金</div>
+    <div style="font-size: 20px; font-weight: bold;">￥<span id="money">0</span></div>
+  </div>
+</div>
+
   <div id="shopContainer" style="display:none;">
     <div class="item-slot" id="item0" onclick="buyItem(0)">
       <div class="item-image"></div>
@@ -443,7 +534,7 @@ body {
 
   <div id="modeSelect">
     <div class="menu-container">
-      <button class="menu-btn">エンドレス</button>
+      <button id="endlessBtn" class="menu-btn">エンドレス</button>
       <button id="startBtn" class="menu-btn">スタート</button>
       <button class="menu-btn">今はなし</button>
     </div>
@@ -467,7 +558,7 @@ body {
 
   <div id="badZone" style="display:none;">悪い</div>
   <div id="goodZone" style="display:none;">良い</div>
-  <div id="plate" style="display:none;"></div>
+  <div id="plate" style="display:none;"><div id="plateCrack"></div></div>
 
 
 </div>
@@ -483,46 +574,120 @@ let fallInterval;
 let dragging = null;
 
 
+// --- モード選択のイベント ---
 document.getElementById("startBtn").onclick = () => {
-  console.log(spawnTimer !== null);
-  // すでにゲームが始まっていたら何もしない（連打防止）
-  if (spawnTimer !== null) return; 
-
-  document.getElementById("modeSelect").style.display = "none";
-  document.getElementById("info").style.display = "flex";
-  document.getElementById("shopContainer").style.display = "flex";
-  
-  // 各要素の表示
-  document.getElementById("badZone").style.display = "block";
-  document.getElementById("goodZone").style.display = "block";
-  document.getElementById("plate").style.display = "block";
-  // --- 【ここを追加】初期アイテムの補充 ---
-  shopResetCost = 2; // コストをリセット
-  document.getElementById("resetBtn").textContent = `更新 ￥${shopResetCost}`;
-  performReset(); // 最初のアイテムを並べる
-  // --------------------------------------
-  // 初期の間隔を設定してタイマー起動
- // gameState.spawnInterval = 1200; 
-  restartSpawnTimer(); 
-  
-  startGame(); // タイムカウントダウンなど
+  isEndless = false; // 通常モード
+  startSequence();
 };
 
+// 追加：エンドレスモードボタンのイベント
+// HTMLに id="endlessBtn" がある前提です
+document.getElementById("endlessBtn").onclick = () => {
+  isEndless = true; // エンドレスモード有効
+  startSequence();
+};
+
+// 共通の開始処理
+
+
+let missionCompletedCount = 0; // エンドレス用
+let gameTimerId = null;        // メインタイマー（一元管理）
+
+function startSequence() {
+  // --- 1. 要素の安全な取得チェック ---
+  const ui = {
+    modeSelect: document.getElementById("modeSelect"),
+    info: document.getElementById("info"),
+    shop: document.getElementById("shopContainer"),
+    bad: document.getElementById("badZone"),
+    good: document.getElementById("goodZone"),
+    plate: document.getElementById("plate"),
+
+    missionUI: document.getElementById("missionTextDisplay"),
+    scoreLabel: document.getElementById("scoreLabel"),
+    scoreVal: document.getElementById("score")
+  };
+
+  // 必須要素が1つでもなければエラーを出して止める（デバッグ用）
+  for (let key in ui) {
+    if (!ui[key]) {
+      console.error(`エラー: ID "${key}" が見つかりません。HTMLを確認してください。`);
+      return;
+    }
+  }
+
+  // --- 2. 画面表示の初期化 ---
+  ui.modeSelect.style.display = "none";
+  ui.info.style.display = "flex";
+  ui.shop.style.display = "flex";
+  ui.bad.style.display = "block";
+  ui.good.style.display = "block";
+  ui.plate.style.display = "block";
+shopResetCost = 2;
+  // --- 3. モード別の設定 ---
+  if (isEndless) {
+
+    ui.missionUI.style.display = "block";
+    ui.scoreLabel.textContent = "達成数";
+    missionCompletedCount = 0;
+    ui.scoreVal.textContent = "0";
+    durability = 100;
+    initEndlessMode(); // ミッションと耐久力をセット
+  } else {
+
+    ui.missionUI.style.display = "none";
+    ui.scoreLabel.textContent = "入れた数";
+    score = 0;
+    ui.scoreVal.textContent = "0";
+    timeLeft = 10; // 通常モードの初期秒数
+      document.getElementById("time").textContent = timeLeft;
+  }
+
+  money = 0;
+  document.getElementById("money").textContent = money;
+
+  performReset();
+  restartSpawnTimer();
+  startGame(); // ここでカウントダウン開始
+}
+
+// エンドレスモードの初期化
+function initEndlessMode() {
+  durability = 100;
+  update(); // UIを100%に更新2
+  startNewMission(); // 最初のミッションをセット
+}
 // 例：カウントダウンタイマーのイメージ
 function startGame() {
+  // 古いタイマーがあれば確実に消す
+  if (gameTimerId) clearInterval(gameTimerId);
+
+  const timeDisplay = document.getElementById("time");
 
   gameTimerId = setInterval(() => {
-    timeLeft--;
-    document.getElementById("time").textContent = timeLeft;
-    
-    if (timeLeft <= 0) {
-      clearInterval(gameTimerId);
-      gameTimerId = null;
-      endGame();
+    if (isEndless) {
+      // --- エンドレスモード：ミッション残り時間をカウント ---
+      missionTimer--;
+      timeDisplay.textContent = missionTimer;
+      
+      if (missionTimer <= 0) {
+        clearInterval(gameTimerId);
+        endGame("ミッション失敗！");
+      }
+       update();
+// 毎秒耐久値を減らす（皿の上にものがある場合）
+    } else {
+      // --- 通常モード：60秒からカウントダウン ---
+      timeLeft--;
+      timeDisplay.textContent = timeLeft;
+      
+      if (timeLeft <= 0) {
+        clearInterval(gameTimerId);
+        endGame(); // タイムアップ
+      }
     }
   }, 1000);
 }
-
 // --- タイムアップ時の処理 ---
 function endGame() {
   // 1. 全てのタイマーを止める
@@ -534,11 +699,21 @@ function endGame() {
     clearInterval(gameTimerId);
     gameTimerId = null;
   }
-
+// --- 皿の見た目をリセット ---
+durability = 100; // 耐久値リセット
+  const plate = document.getElementById("plate");
+  const crack = document.getElementById("plateCrack");
+  
+  if (plate) {
+    plate.classList.remove("shake-anime"); // 震えを止める
+    plate.style.filter = "none";           // 赤みを消す
+  }
+  if (crack) {
+    crack.style.opacity = 0;               // ヒビを消す
+  }
   // 2. 【追加】画面上のおみくじを全削除
   const activeOmikujis = document.querySelectorAll('.omikuji');
   activeOmikujis.forEach(o => o.remove());
-
   // 3. スコア反映と表示切り替え
   document.getElementById("finalCount").textContent = score;
   document.getElementById("finalMoney").textContent = money;
@@ -555,7 +730,7 @@ function restartGame() {
   money = 0;
   timeLeft = 10;
   shopResetCost = 2;
-  
+
   // UI更新
   document.getElementById("money").textContent = money;
   document.getElementById("score").textContent = score;
@@ -603,6 +778,13 @@ function goToTitle() {
 function spawnOmikuji() {
   const gameScreen = document.getElementById("gameScreen");
   const omikuji = document.createElement("div");
+  omikuji.className = "omikuji";
+  
+  // ランダムに選んだアイテムのID（種類）を保存しておく
+  const typeIdx = Math.floor(Math.random() * ITEM_LIST.length);
+  const typeId = ITEM_LIST[typeIdx].id; // "luck_daikichi" や "luck_kyo" など
+  
+  omikuji.dataset.type = typeId; // ここで種類を記憶！
 // --- 【追加】最大数制限 (例: 50個まで) ---
   const currentCount = document.querySelectorAll('.omikuji').length;
   const MAX_OMIKUJI = 50; 
@@ -628,10 +810,10 @@ function spawnOmikuji() {
   for (let i = 0; i < gameState.itemLevels["luck_kyo"] * 5; i++) {
     pool.push("凶");
   }
-console.log(pool);
+  //console.log(pool);
   const typeName = pool[Math.floor(Math.random() * pool.length)];
   const config = OMIKUJI_TYPES[typeName];
-  
+  //console.log("生成されたおみくじの種類:", typeName);
   // 以降、描画処理...
   omikuji.className = "omikuji";
   omikuji.dataset.type = typeName;
@@ -698,10 +880,22 @@ console.log(pool);
   }, 16);
 
   // --- ドラッグ＆はじく処理（中心点ズレ修正版） ---
+// --- ドラッグ＆はじく処理 ---
   omikuji.onpointerdown = (e) => {
     e.preventDefault();
     dragging = omikuji;
-    isOnPlate = false;
+    
+    // 【修正】掴んだ瞬間にすべての状態をリセット
+    isOnPlate = false; 
+    vx = 0;
+    vy = 0;
+    
+    // 見た目のフィードバックを消す
+    omikuji.classList.remove("on-plate");
+    omikuji.style.outline = "none";
+    omikuji.style.boxShadow = "none";
+    if (omikuji.dataset) omikuji.dataset.stillFrames = 0;
+
     omikuji.setPointerCapture(e.pointerId);
 
     let lastX = e.clientX;
@@ -710,6 +904,9 @@ console.log(pool);
     const move = (ev) => {
       if (dragging !== omikuji) return;
       
+      // 移動中は強制的にフラグを折り続ける
+      isOnPlate = false;
+
       // 速度計算 
       vx = (ev.clientX - lastX) * PARAMS.tossPower;
       vy = (ev.clientY - lastY) * PARAMS.tossPower;
@@ -717,45 +914,45 @@ console.log(pool);
       lastY = ev.clientY;
 
       const sRect = gameScreen.getBoundingClientRect();
-      
-      // 指の真ん中におみくじが来るように計算 
       omikuji.style.left = (ev.clientX - sRect.left - (omikuji.offsetWidth / 2)) + "px";
       omikuji.style.top = (ev.clientY - sRect.top - (omikuji.offsetHeight / 2)) + "px";
     };
-
+    
     const up = () => {
       document.removeEventListener("pointermove", move);
       document.removeEventListener("pointerup", up);
+      
+      // 【重要】離した瞬間に少しだけ勢いをつける、または自由落下を再開させる
       dragging = null;
     };
     
     document.addEventListener("pointermove", move);
     document.addEventListener("pointerup", up);
-  };
-}
+  };}
+
 // --- 良い・悪いゾーンの判定 ---
 let money = 0; // お金の変数を追加
-
 function checkDrop(omikuji) {
-
-const rect = omikuji.getBoundingClientRect();
-  const gameRect = document.getElementById("gameScreen").getBoundingClientRect(); // 画面の基準を取得
-  
+  const rect = omikuji.getBoundingClientRect();
+  const gameRect = document.getElementById("gameScreen").getBoundingClientRect();
   const goodGoal = document.getElementById("goodZone").getBoundingClientRect();
   const badGoal = document.getElementById("badZone").getBoundingClientRect();
 
-  const typeName = omikuji.dataset.type;
-  const config = OMIKUJI_TYPES[typeName];
+  // dataset.type が空でないか確認（デバッグ用）
+  const type = omikuji.dataset.type;
+
+  if (!type) {
+    console.error("エラー: おみくじに type が設定されていません！");
+  }
+
+  const config = OMIKUJI_TYPES[type];
   let earnedMoney = 0;
   let scored = false;
 
-  // 「良い方」に入った場合
   if (isOverlap(rect, goodGoal)) {
     earnedMoney = config.goodPay;
     scored = true;
-  } 
-  // 「悪い方」に入った場合
-  else if (isOverlap(rect, badGoal)) {
+  } else if (isOverlap(rect, badGoal)) {
     earnedMoney = config.badPay;
     scored = true;
   }
@@ -763,24 +960,48 @@ const rect = omikuji.getBoundingClientRect();
 if (scored) {
     const finalPay = Math.floor(earnedMoney * gameState.moneyMultiplier);
     money += finalPay;
-    score++;
+
+    // --- ここがポイント：スコア加算 ---
+    // モードに関わらず「入れた数」をカウントアップ
+    score++; 
     
+    // UIを更新（通常モードの左上の数字）
+    const scoreElement = document.getElementById("score");
+    if (scoreElement) {
+      // エンドレスモード中なら「ミッション達成数」を表示しているはずなので
+      // 通常モードの時だけ score を反映させる
+      if (!isEndless) {
+        scoreElement.textContent = score;
+      }
+    }
+
     document.getElementById("money").textContent = money;
     updateShopVisuals();
 
-    // 相対座標の計算
+    // --- エンドレスモード用の追加判定 ---
+    if (isEndless) {
+      const type = omikuji.dataset.type;
+      let missionType = "";
+      if (type.includes("大吉")) missionType = "daikichi";
+      else if (type.includes("kichi")) missionType = "kichi";
+      else if (type.includes("凶")) missionType = "kyo";
+
+      if (currentMission.type === "money") {
+        checkMissionProgress("money", finalPay);
+      } else if (missionType !== "") {
+        checkMissionProgress(missionType, 1);
+      }
+    }
+
+    // エフェクト表示と削除
     const relativeX = rect.left - gameRect.left + (rect.width / 2);
     const relativeY = rect.top - gameRect.top;
-
-    // 【ここを修正】金額に応じてサイズを計算 (最小20px、最大値777円の時に巨大になるよう設定)
-    // 20px (基本) + (金額 / 777 * 60px) くらいの計算にすると、最大80px程度になります
     const fontSize = Math.min(50, 10 + (finalPay / 777) * 100);
-
     showMoneyEffect(relativeX, relativeY, finalPay, fontSize);
+
     omikuji.remove();
   }
 }
-
 // 金額が浮き出る演出
 function showMoneyEffect(x, y, amount, size) {
   const gameScreen = document.getElementById("gameScreen");
@@ -840,7 +1061,6 @@ function checkPlate(omikuji) {
 }
 
 
-
 let spawnTimer = null; // タイマーを保持する変数
 
 function restartSpawnTimer() {
@@ -853,7 +1073,7 @@ function restartSpawnTimer() {
   // gameStateに設定された間隔でおみくじを降らせる
   spawnTimer = setInterval(() => {
     spawnOmikuji();
-    console.log("おみくじを降らせました", gameState.spawnInterval );
+    //console.log("おみくじを降らせました", gameState.spawnInterval );
   }, gameState.spawnInterval || 1200);
 }
 
@@ -1061,6 +1281,139 @@ function resetAllItemLevels() {
 }
 
 
+function update() {
+  const omikujis = document.querySelectorAll(".omikuji");
+
+  omikujis.forEach((omikuji) => {
+    // 1. 速度を取得
+    const vy = parseFloat(omikuji.dataset.vy || 0); 
+    const vx = parseFloat(omikuji.dataset.vx || 0);
+    
+    // 2. 現在ドラッグ中かどうかのフラグを確認（既存の変数名に合わせてください）
+    // もし omikuji.isDragging のようなフラグがあればそれを使います
+    const isDragging = omikuji.style.zIndex === "1000"; // ドラッグ中はおそらく zIndex を上げているはず
+
+    // 「速度がほぼ0」かつ「マウスで掴んでいない」場合のみ「静止（皿の上）」とみなす
+    if (Math.abs(vy) < 0.1 && Math.abs(vx) < 0.1 && !isDragging) {
+      let stillFrames = parseInt(omikuji.dataset.stillFrames || 0);
+      stillFrames++;
+      omikuji.dataset.stillFrames = stillFrames;
+
+      if (stillFrames > 3) {
+        omikuji.classList.add("on-plate");
+      }
+    } else {
+      // 弾いた（速度が出た）瞬間や、掴んだ瞬間に即座に解除
+      omikuji.dataset.stillFrames = 0;
+      omikuji.classList.remove("on-plate");
+      
+      // スタイルをリセット
+      omikuji.style.outline = "none";
+      omikuji.style.boxShadow = "none";
+      omikuji.style.filter = "none";
+    }
+  });
+
+  if (isEndless) {
+    calculateDurability();
+  }
+}
+function calculateDurability() {
+  const onPlateItems = document.querySelectorAll(".on-plate");
+  const count = onPlateItems.length;
+
+  // 1つ以上乗っているなら耐久力を減らす
+  if (count > 0) {
+    // 減少スピードを調整（必要に応じて数値を変更）
+    durability -= count * 0.5;
+
+    if (durability <= 0) {
+      durability = 0;
+      endGame("皿が壊れました！");
+    }
+    updateDurabilityUI();
+  }
+}
+// --- 耐久値を更新する関数 ---
+
+function updateDurabilityUI() {
+  const plate = document.getElementById("plate");
+  const crack = document.getElementById("plateCrack");
+  if (!plate) return;
+
+  // 100から現在の耐久を引いた「ダメージ率」を計算
+  const damage = 100 - durability; 
+
+  // ダメージに応じて赤くする
+  plate.style.filter = `sepia(${damage}%) saturate(${100 + damage * 2}%) hue-rotate(-50deg)`;
+// 2. ヒビの濃さ (50%を切ったら徐々にヒビが見えてくる)
+  if (crack) {
+    if (damage > 30) {
+      // 30%以上のダメージでヒビが出現
+      crack.style.opacity = (damage - 30) / 70; 
+    } else {
+      crack.style.opacity = 0;
+    }
+  }
+  // 20%以下（ダメージ80以上）で震える
+  if (durability <= 20) {
+    plate.classList.add("shake-anime");
+  } else {
+    plate.classList.remove("shake-anime");
+  }
+}
+// --- ミッション開始時の処理 ---
+function startNewMission() {
+  currentMission = MISSIONS[Math.floor(Math.random() * MISSIONS.length)];
+  missionProgress = 0;
+  missionTimer = currentMission.time; // ミッション時間をセット
+  document.getElementById("time").textContent = missionTimer;
+  const missionDisplay = document.getElementById("missionTextDisplay");
+  missionDisplay.style.display = "block";
+  updateMissionText();
+}
+// テキスト更新用
+function updateMissionText() {
+  const missionDisplay = document.getElementById("missionTextDisplay");
+  missionDisplay.textContent = `${currentMission.text} (${missionProgress}/${currentMission.count})`;
+}
+
+// ミッション進捗時にテキストを更新
+function checkMissionProgress(type, value = 1) {
+  if (!isEndless || !currentMission) {
+    //console.log("ミッション判定スキップ: Endlessでないか、ミッションがありません");
+    return;
+  }
+
+  //console.log(`ミッション判定中: ターゲット=${currentMission.type}, 入力=${type}, 値=${value}`);
+  if (currentMission.type === type) {
+    if (type === "money") {
+      missionProgress += value;
+    } else {
+      missionProgress += 1;
+    }
+    
+    console.log(`進捗更新: ${missionProgress} / ${currentMission.count}`);
+    updateMissionText();
+
+    if (missionProgress >= currentMission.count) {
+      console.log("ミッションクリア！");
+      completeMission();
+    }
+  }
+}
+function completeMission() {
+  durability = 100; // 回復
+  missionCompletedCount++; // 達成数をカウント
+  
+  // 画面の数値を更新
+  document.getElementById("score").textContent = missionCompletedCount;
+  
+  showMoneyEffect(window.innerWidth/2, window.innerHeight/2, "MISSION CLEAR!", 40);
+  startNewMission(); 
+}
+
+// --- リサイズ処理 ---
 const gameScreen = document.getElementById("gameScreen");
 const resizeHandle = document.getElementById("resizeHandle");
 
@@ -1085,7 +1438,7 @@ const doResize = (e) => {
   const newHeight = clientY - rect.top;
 
   // 最小・最大制限を守りつつ反映
-  if (newHeight > 400 && newHeight < window.innerHeight * 0.98) {
+  if (newHeight > 450 && newHeight < window.innerHeight * 1.1) {
     gameScreen.style.height = newHeight + "px";
   }
 };

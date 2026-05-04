@@ -50,3 +50,15 @@ const ITEM_LIST = [
   { id: "luck_kichi",    name: "吉の加護",   price: 15, image: "2.png" },
   { id: "luck_kyo",      name: "凶の呪い",   price: 10, image: "6.png" }
 ];
+let isEndless = false;
+let durability = 100;
+let currentMission = null;
+let missionTimer = 0;
+let missionGoal = 0;
+let missionProgress = 0;
+
+const MISSIONS = [
+  { text: "大吉を3回入れろ", type: "daikichi", count: 3, time: 50 },
+  { text: "凶を2回入れろ", type: "kyo", count: 2, time: 55 },
+  { text: "合計￥1000稼げ", type: "money", count: 1000, time: 50 }
+];
