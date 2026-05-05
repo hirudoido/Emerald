@@ -36,8 +36,8 @@ body {
   bottom: 0;
   left: 0;
   width: 100%;
-  height: 80px;      /* 掴みやすい太さ */
-  background: linear-gradient(transparent, rgba(0,0,0,0.2)); /* 視覚的なガイド */
+  height: 14%;      /* 掴みやすい太さ */
+  background: linear-gradient(transparent, rgba(109, 103, 103, 2)); /* 視覚的なガイド */
   cursor: ns-resize; /* 上下リサイズのカーソル */
   z-index: 2000;
   display: flex;
@@ -104,7 +104,7 @@ body {
   left: 0;
   width: 100%;
   height: 45%;
-  background: #9d3434;  /* 上面は光が当たって明るい色 */
+  background: #b72596;  /* 上面は光が当たって明るい色 */
   transition: filter 0.3s ease; /* 色変化を滑らかに */
   overflow: hidden;
   border-radius: 4px 4px 0 0;
@@ -546,7 +546,7 @@ body {
 <div id="resultScreen" style="display: none;">
   <h2>業務終了</h2>
   <div class="result-stats">
-    <p>入れた数: <span id="finalCount">0</span>個</p>
+    <p>こなした数: <span id="finalCount">0</span>個</p>
     <p>稼いだ額: ￥<span id="finalMoney">0</span></p>
   </div>
   
@@ -689,7 +689,7 @@ function startGame() {
   }, 1000);
 }
 // --- タイムアップ時の処理 ---
-function endGame() {
+function endGame(reason) {
   // 1. 全てのタイマーを止める
   if (spawnTimer) {
     clearInterval(spawnTimer);
@@ -711,6 +711,14 @@ durability = 100; // 耐久値リセット
   if (crack) {
     crack.style.opacity = 0;               // ヒビを消す
   }
+
+  //  リザルト画面のタイトル
+  const resultTitle = document.querySelector("#resultScreen h2");
+  if (resultTitle) {
+    // 引数があればそれを使う、なければデフォルトの「業務終了」
+    resultTitle.textContent = reason || "業務終了";
+  }
+
   // 2. 【追加】画面上のおみくじを全削除
   const activeOmikujis = document.querySelectorAll('.omikuji');
   activeOmikujis.forEach(o => o.remove());
@@ -724,7 +732,9 @@ durability = 100; // 耐久値リセット
 function restartGame() {
   // レベルのリセット
   resetAllItemLevels();
-
+if (isEndless) {
+   initEndlessMode() // ミッションと耐久力をセット    
+}
   // ゲームデータの初期化
   score = 0;
   money = 0;
@@ -736,7 +746,7 @@ function restartGame() {
   document.getElementById("score").textContent = score;
   document.getElementById("resultScreen").style.display = "none";
   document.getElementById("shopContainer").style.display = "flex";
-
+      document.getElementById("time").textContent = timeLeft;
   // ショップをまっさらな状態で補充
   performReset();
   
@@ -979,17 +989,53 @@ if (scored) {
     updateShopVisuals();
 
     // --- エンドレスモード用の追加判定 ---
+ // --- エンドレスモード用の追加判定 ---
     if (isEndless) {
-      const type = omikuji.dataset.type;
-      let missionType = "";
-      if (type.includes("大吉")) missionType = "daikichi";
-      else if (type.includes("kichi")) missionType = "kichi";
-      else if (type.includes("凶")) missionType = "kyo";
+      const typeName = omikuji.dataset.type; // "大吉" "末吉" など
+      const config = OMIKUJI_TYPES[typeName];
 
-      if (currentMission.type === "money") {
+      // 1. 「大吉」「凶」以外を入れろ
+      if (currentMission.type === "not_special") {
+        if (typeName !== "大吉" && typeName !== "凶") {
+          checkMissionProgress("not_special", 1);
+        }
+      }
+
+      // 2. 20回入れろ（トータルカウント）
+      else if (currentMission.type === "total_count") {
+        checkMissionProgress("total_count", 1);
+      }
+
+      // 3. 正しい方（得する方）に入れろ
+      else if (currentMission.type === "side_check") {
+        // GoodZoneに入ったかどうか（earnedMoney が config.goodPay と等しいか）
+        const putInGood = (earnedMoney === config.goodPay);
+        
+        // おみくじの性質判定：Goodの方が高い（大吉〜末吉）か、Badの方が高い（凶）か
+        const isGoodBetter = config.goodPay >= config.badPay;
+
+        // 【判定条件】
+        // 「報酬が高いのがGood」かつ「Goodに入れた」 
+        // または 「報酬が高いのがBad（凶など）」かつ「Badに入れた」
+        if ((isGoodBetter && putInGood) || (!isGoodBetter && !putInGood)) {
+          checkMissionProgress("side_check", 1);
+        }
+      }
+
+      // 4. 既存の金額ミッションなど
+      else if (currentMission.type === "money") {
         checkMissionProgress("money", finalPay);
-      } else if (missionType !== "") {
-        checkMissionProgress(missionType, 1);
+      }
+      
+      // 5. 既存の特定の種類ミッション
+      else {
+        let missionType = "";
+        if (typeName.includes("大吉")) missionType = "daikichi";
+        else if (typeName.includes("凶")) missionType = "kyo";
+
+        if (missionType !== "") {
+          checkMissionProgress(missionType, 1);
+        }
       }
     }
 
@@ -1173,6 +1219,10 @@ function buyItem(index) {
     
     // 7. 効果を即反映
     applyItemEffect(id, gameState.itemLevels[id]);
+    // 購入成功処理の後
+  if (isEndless && currentMission.type === "shop_action") {
+    checkMissionProgress("shop_action", 1);
+  }
   }
 }
 function refreshShopUI() {
@@ -1316,6 +1366,7 @@ function update() {
 
   if (isEndless) {
     calculateDurability();
+     
   }
 }
 function calculateDurability() {
@@ -1333,6 +1384,7 @@ function calculateDurability() {
     }
     updateDurabilityUI();
   }
+  checkKeepMission();
 }
 // --- 耐久値を更新する関数 ---
 
@@ -1345,7 +1397,8 @@ function updateDurabilityUI() {
   const damage = 100 - durability; 
 
   // ダメージに応じて赤くする
-  plate.style.filter = `sepia(${damage}%) saturate(${100 + damage * 2}%) hue-rotate(-50deg)`;
+ // 元の水色を消しながら赤を強くする設定例
+plate.style.filter = `brightness(${1 - damage/200}) saturate(${100 + damage * 4}%) hue-rotate(${damage * 1.5}deg) sepia(${damage}%)`;
 // 2. ヒビの濃さ (50%を切ったら徐々にヒビが見えてくる)
   if (crack) {
     if (damage > 30) {
@@ -1362,9 +1415,50 @@ function updateDurabilityUI() {
     plate.classList.remove("shake-anime");
   }
 }
+
+// --- 皿のミッションの進捗をチェックする関数 ---
+let keepTimer = 0; // 関数の外で定義
+
+function checkKeepMission() {
+  // 安全装置
+// 1. 安全装置：currentMission が「定義されているか」かつ「nullでないか」をチェック
+  if (typeof currentMission === "undefined" || currentMission === null) {
+    keepTimer = 0;
+    console.log("currentMission が定義されていません");
+    return;
+  }
+
+  // 2. ミッションの種類が keep_limit 以外なら何もしない
+  if (currentMission.type !== "keep_limit") {
+    keepTimer = 0;
+    console.log("keep_limit 以外のミッション");
+    return;
+  }
+  const count = document.querySelectorAll(".on-plate").length;
+  
+  // 1個以上、かつ10個以下の場合
+  if (count >= 0 && count <= 10) {
+    keepTimer +=1000; // 毎フレーム(約16.6ms)加算
+    console.log("keepTimer", keepTimer);
+    // 1000ms（1秒）経過したら
+    if (keepTimer >= 1000) {
+      // 進捗を「1」増やす（これが画面上の「1/5」の「1」になります）
+      checkMissionProgress("keep_limit", 1); 
+      keepTimer = 0; // 次の1秒のためにリセット
+      
+      // デバッグ用：動いているかコンソールで確認
+      console.log("1秒キープ成功！現在の進捗:", missionProgress);
+    }
+  } else {
+    // 範囲外（0個または11個以上）になったらタイマーをリセット
+    // ※「連続」で5秒ならリセットでOK。「累計」で5秒ならここを消します。
+    keepTimer = 0; 
+  }
+}
 // --- ミッション開始時の処理 ---
 function startNewMission() {
   currentMission = MISSIONS[Math.floor(Math.random() * MISSIONS.length)];
+  keepTimer = 0;       // タイマーリセット（これを追加）
   missionProgress = 0;
   missionTimer = currentMission.time; // ミッション時間をセット
   document.getElementById("time").textContent = missionTimer;
@@ -1402,6 +1496,7 @@ function checkMissionProgress(type, value = 1) {
     }
   }
 }
+
 function completeMission() {
   durability = 100; // 回復
   missionCompletedCount++; // 達成数をカウント
