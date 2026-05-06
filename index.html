@@ -6,6 +6,7 @@
 <style>
 /* --- 1. デバイス全体の固定設定 --- */
 body {
+  -webkit-text-size-adjust: 100%;
   margin: 0;
   padding: 0;
   background: #000;
@@ -263,7 +264,7 @@ body {
   top: 0;
   left: 0;
   width: 100%;
-  height: 10%; /* 少し高さを出すとバランスが良いです */
+  height: 13%; /* 少し高さを出すとバランスが良いです */
   display: flex;
   justify-content: space-around;
   align-items: center;
@@ -275,6 +276,7 @@ body {
 
 /* 各項目の調整 */
 .info-item {
+
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -305,15 +307,15 @@ body {
   width: 95%;         /* 横幅いっぱい */
   display: none;      /* JSでflexに切り替える */
   justify-content: center;
-  gap: 15px;          /* アイテム間の隙間 */
+  gap: 7%;          /* アイテム間の隙間 */
   z-index: 200;       /* 皿やゾーンよりも手前に */
   pointer-events: auto; /* クリックを有効に */
 }
 
 .item-slot {
   position: relative;
-  width: 80px;
-  height: 100px;
+  width: 20%;
+  height: 100%;
   background: rgba(255, 255, 255, 0.9);
   border: 3px solid #ccc;
   border-radius: 10px;
@@ -339,8 +341,8 @@ body {
   animation: pulse 1.0s infinite ease-in-out; /* 1.5sから1.0sに速く */
 }
 .item-image {
-  width: 50px;       /* 必須：幅 */
-  height: 50px;      /* 必須：高さ */
+  width: 100%;       /* 必須：幅 */
+  height: 100px;      /* 必須：高さ */
   background-size: contain;      /* 画像を枠内に収める */
   background-repeat: no-repeat;  /* 繰り返さない */
   background-position: center;   /* 中央に配置 */
@@ -370,7 +372,7 @@ body {
   content: "SOLD OUT";
   color: red;
   font-weight: bold;
-  font-size: 10px;
+  font-size: 10%;
 }
 
 #resetBtn {
@@ -382,7 +384,7 @@ body {
   font-weight: bold;
   cursor: pointer;
   transition: 0.3s;
-  min-width: 80px;
+  min-width: 17%;
 }
 
 /* 更新ができる時に光る */
@@ -454,14 +456,6 @@ body {
 }
 
 
-#missionTextDisplay {
-  font-size: 14px;
-  color: #00ffcc;
-  text-shadow: 1px 1px 2px #000;
-  margin-top: 5px;
-  font-weight: bold;
-  white-space: nowrap;
-}
 #timeContainer {
   display: flex;
   flex-direction: column; /* 縦に並べる */
@@ -471,7 +465,7 @@ body {
 }
 /* 耐久力バーのレイアウト調整 */
 #time {
-  font-size: 42px;
+  font-size: clamp(16px, 2.5vh, 100px);
   line-height: 1;
   font-weight: bold;
   color: #fff;
@@ -479,7 +473,7 @@ body {
 }
 
 #missionTextDisplay {
-  font-size: 14px;
+  font-size: clamp(16px, 1.5vh, 100px);
   color: #00ffcc;
   background: rgba(0, 0, 0, 0.6); /* 背景を黒透過にして読みやすく */
   padding: 4px 12px;
@@ -487,6 +481,9 @@ body {
   border: 1px solid #00ffcc;
   white-space: nowrap;    /* 改行させない */
   box-shadow: 0 0 10px rgba(0, 255, 204, 0.3); /* ほんのり光らせる */
+      text-shadow: 1px 1px 2px #000;/* 文字に影を付ける */
+    margin-top: 5px;/* 上に余白を追加 */
+    font-weight: bold;/* 太字にする */
 }
 
 
@@ -502,8 +499,8 @@ body {
 <div id="gameScreen">
 <div id="info" style="display: none;">
   <div class="status-box side">
-    <div id="scoreLabel" style="font-size: 10px;">入れた数</div>
-    <div id="score" style="font-size: 20px; font-weight: bold;">0</div>
+    <div id="scoreLabel" style="font-size: clamp(min(16px,20%), 4vw, max(24px,50%));">入れた数</div>
+    <div id="score" style="font-size: 200%; font-weight: bold;">0</div>
   </div>
 
   <div class="status-box center" id="timeContainer">
@@ -512,8 +509,8 @@ body {
   </div>
 
   <div class="status-box side">
-    <div style="font-size: 10px;">所持金</div>
-    <div style="font-size: 20px; font-weight: bold;">￥<span id="money">0</span></div>
+    <div style="font-size: 80%;">所持金</div>
+    <div style="font-size: 200%; font-weight: bold;">￥<span id="money">0</span></div>
   </div>
 </div>
 
@@ -1376,7 +1373,7 @@ function calculateDurability() {
   // 1つ以上乗っているなら耐久力を減らす
   if (count > 0) {
     // 減少スピードを調整（必要に応じて数値を変更）
-    durability -= count * 0.5;
+    durability -= count * 0.01;
 
     if (durability <= 0) {
       durability = 0;
