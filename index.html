@@ -114,7 +114,7 @@ body {
 
 /* 台座の「脚（下の支え部分）」 */
 #plate::after {
-  content: "皿";       /* 文字を入れる場合はここ */
+  content: "";       /* 文字を入れる場合はここ */
   display: flex;
   align-items: center;
   justify-content: center;
@@ -174,7 +174,7 @@ body {
   justify-content: center;
   color: #fff; /* 文字色 */
   font-weight: bold;
-  font-size: 1.5vw;
+  font-size: 1.5vh;
 
 
   /* ドラッグしやすくするため、タッチ時の挙動を制限 */
@@ -284,7 +284,7 @@ body {
 }
 
 .label {
-  font-size: 2%;
+  font-size:  clamp(16px, 0.5vh, 100px);;
   color: #ffcc00;
   font-weight: bold;
 }
@@ -328,7 +328,7 @@ body {
   position: absolute;
   top: 2px;
   right: 5px;
-  font-size: 12px;
+  font-size:  clamp(16px, 1.5vh, 100px);;
   font-weight: bold;
   color: #0b0b0b;
 }
@@ -372,10 +372,11 @@ body {
   content: "SOLD OUT";
   color: red;
   font-weight: bold;
-  font-size: 10%;
+  font-size:  clamp(16px, 1.5vh, 100px);;
 }
 
 #resetBtn {
+  font-size:  clamp(16px, 1.5vh, 100px);;
   padding: 10px;
   background: #444;
   color: white;
@@ -416,13 +417,13 @@ body {
 }
 
 #resultScreen h2 {
-  font-size: 32px;
+  font-size:  clamp(16px, 3.5vh, 100px);;
   color: #ffcc00;
   margin-bottom: 20px;
 }
 
 .result-stats {
-  font-size: 24px;
+  font-size:  clamp(16px, 2.5vh, 100px);;
   margin-bottom: 30px;
 }
 
@@ -434,7 +435,7 @@ body {
 
 .result-buttons button {
   padding: 15px 30px;
-  font-size: 18px;
+  font-size:  clamp(16px, 2.2vh, 100px);;
   font-weight: bold;
   cursor: pointer;
   border-radius: 50px;
@@ -499,8 +500,8 @@ body {
 <div id="gameScreen">
 <div id="info" style="display: none;">
   <div class="status-box side">
-    <div id="scoreLabel" style="font-size: clamp(min(16px,20%), 4vw, max(24px,50%));">入れた数</div>
-    <div id="score" style="font-size: 200%; font-weight: bold;">0</div>
+    <div id="scoreLabel" style="font-size:  clamp(16px, 1.9vh, 100px);">入れた数</div>
+    <div id="score" style="font-size:  clamp(16px, 2.1vh, 100px);; font-weight: bold;">0</div>
   </div>
 
   <div class="status-box center" id="timeContainer">
@@ -509,8 +510,8 @@ body {
   </div>
 
   <div class="status-box side">
-    <div style="font-size: 80%;">所持金</div>
-    <div style="font-size: 200%; font-weight: bold;">￥<span id="money">0</span></div>
+    <div style="font-size:  clamp(16px, 1.9vh, 100px);">所持金</div>
+    <div style="font-size:  clamp(16px, 2.0vh, 100px); font-weight: bold;">￥<span id="money">0</span></div>
   </div>
 </div>
 
