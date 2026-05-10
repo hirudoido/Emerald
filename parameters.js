@@ -58,12 +58,12 @@ let missionGoal = 0;
 let missionProgress = 0;
 
 const MISSIONS = [
-  { text: "大吉を3回入れろ",         type: "daikichi",  count: 3, time: 550 },
-  { text: "凶を2回入れろ",           type: "kyo",       count: 2, time: 555 },
-  { text: "合計￥1000稼げ",          type: "money",     count: 1000, time: 550 },
-  {text: "「大吉」「凶」以外を入れろ",type: "not_special", count: 5, time: 530 },
-  { text: "20個入れろ（種類不問）",   type: "total_count", count: 20, time: 545 },
-  {  text: "皿を10個以下で5秒保て",   type: "keep_limit", count: 5,  time: 540 },
-  {  text: "ショップで3回買い物せよ", type: "shop_action", count: 3, time: 560 },
-  {  text: "得する方に5回入れろ",     type: "side_check", count: 5, time: 535 }
+  { text: "「大吉」を入れろ",         type: "daikichi",  count: 1, time: 55 },
+  { text: "「凶」を入れろ",           type: "kyo",       count: 1, time: 55 },
+  { text: "「お金」を稼げ",          type: "money",     count: 10, time: 55 },
+  {text: "「大吉」「凶」以外を入れろ",type: "not_special", count: 1, time: 53 },
+  { text: "種類問わず入れろ",   type: "total_count", count: 1, time: 54 },
+  {  text: "皿を10個以下で保て",   type: "keep_limit", count: 1,  time: 54 },
+  {  text: "ショップで買い物しろ", type: "shop_action", count: 1, time: 50 },
+  {  text: "得する方に入れろ",     type: "side_check", count: 2, time: 55 }
 ];

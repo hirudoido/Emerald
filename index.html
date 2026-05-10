@@ -652,6 +652,10 @@ shopResetCost = 2;
 // エンドレスモードの初期化
 function initEndlessMode() {
   durability = 100;
+  // --- ここを追加 ---
+  availableMissions = []; // ミッションの山札をクリア
+  missionDifficultyMultiplier = 0; // 難易度倍率をリセット
+  // -----------------
   update(); // UIを100%に更新2
   startNewMission(); // 最初のミッションをセット
 }
@@ -684,7 +688,7 @@ function startGame() {
         endGame(); // タイムアップ
       }
     }
-  }, 1000);
+  }, 1000-(missionDifficultyMultiplier-1)*100);
 }
 // --- タイムアップ時の処理 ---
 function endGame(reason) {
@@ -1429,7 +1433,7 @@ function checkKeepMission() {
   // 2. ミッションの種類が keep_limit 以外なら何もしない
   if (currentMission.type !== "keep_limit") {
     keepTimer = 0;
-    console.log("keep_limit 以外のミッション");
+   // console.log("keep_limit 以外のミッション");
     return;
   }
   const count = document.querySelectorAll(".on-plate").length;
@@ -1453,7 +1457,44 @@ function checkKeepMission() {
     keepTimer = 0; 
   }
 }
-// --- ミッション開始時の処理 ---
+
+function startNewMission() {
+// 1. 山札が空、または存在しない場合は全ミッションを補充
+  if (availableMissions.length === 0) {
+    console.log("山札が空のため全ミッションを補充します");
+    availableMissions = MISSIONS.slice(); // 全リストをコピー
+    // フィッシャー–イェーツのシャッフル（よりランダムにする場合）
+    for (let i = availableMissions.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [availableMissions[i], availableMissions[j]] = [availableMissions[j], availableMissions[i]];
+    }
+    missionDifficultyMultiplier += 1;
+    console.log("シャッフル", missionDifficultyMultiplier);
+  }
+
+  // 2. 山札から一つ取り出す（pop）
+  const selected = availableMissions.pop();
+
+  // 3. 難易度を計算して適用（達成数に応じてターゲットを増やす）
+  // 例: 5回達成するごとに要求数が 1.2倍 ずつ増えるイメージ
+  currentMission = { ...selected };
+  // 4. 次回のために難易度倍率を少し上げる（例: 1ミッションごとに5%アップ）
+  currentMission.count = Math.ceil((selected.count+missionCompletedCount) * missionDifficultyMultiplier*0.1); // 0.1;
+console.log("スコア", missionCompletedCount, "難易度", currentMission.count);
+
+//
+  missionProgress = 0;
+  missionTimer = selected.time;
+  
+
+  keepTimer = 0;       // タイマーリセット（これを追加）
+
+  document.getElementById("time").textContent = missionTimer;
+  const missionDisplay = document.getElementById("missionTextDisplay");
+  missionDisplay.style.display = "block";
+  updateMissionText();
+}
+/*
 function startNewMission() {
   currentMission = MISSIONS[Math.floor(Math.random() * MISSIONS.length)];
   keepTimer = 0;       // タイマーリセット（これを追加）
@@ -1463,7 +1504,7 @@ function startNewMission() {
   const missionDisplay = document.getElementById("missionTextDisplay");
   missionDisplay.style.display = "block";
   updateMissionText();
-}
+}*/
 // テキスト更新用
 function updateMissionText() {
   const missionDisplay = document.getElementById("missionTextDisplay");
@@ -1485,7 +1526,7 @@ function checkMissionProgress(type, value = 1) {
       missionProgress += 1;
     }
     
-    console.log(`進捗更新: ${missionProgress} / ${currentMission.count}`);
+   // console.log(`進捗更新: ${missionProgress} / ${currentMission.count}`);
     updateMissionText();
 
     if (missionProgress >= currentMission.count) {
