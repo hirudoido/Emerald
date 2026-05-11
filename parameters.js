@@ -63,7 +63,7 @@ const MISSIONS = [
   { text: "「お金」を稼げ",          type: "money",     count: 10, time: 55 },
   {text: "「大吉」「凶」以外を入れろ",type: "not_special", count: 1, time: 53 },
   { text: "種類問わず入れろ",   type: "total_count", count: 1, time: 54 },
-  {  text: "皿を10個以下で保て",   type: "keep_limit", count: 1,  time: 54 },
   {  text: "ショップで買い物しろ", type: "shop_action", count: 1, time: 50 },
-  {  text: "得する方に入れろ",     type: "side_check", count: 2, time: 55 }
+  {  text: "得する方に入れろ",     type: "side_check", count: 2, time: 55 },
+  {  text: "皿を10個以下で保て",   type: "keep_limit", count: 1,  time: 54 },
 ];

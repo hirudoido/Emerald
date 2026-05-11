@@ -688,7 +688,7 @@ function startGame() {
         endGame(); // タイムアップ
       }
     }
-  }, 1000-(missionDifficultyMultiplier-1)*100);
+  },Math.max(100, 1000-(missionDifficultyMultiplier-1)*50));
 }
 // --- タイムアップ時の処理 ---
 function endGame(reason) {
@@ -1378,7 +1378,7 @@ function calculateDurability() {
   // 1つ以上乗っているなら耐久力を減らす
   if (count > 0) {
     // 減少スピードを調整（必要に応じて数値を変更）
-    durability -= count * 0.01;
+    durability -= count * 0.4;
 
     if (durability <= 0) {
       durability = 0;
@@ -1476,10 +1476,19 @@ function startNewMission() {
   const selected = availableMissions.pop();
 
   // 3. 難易度を計算して適用（達成数に応じてターゲットを増やす）
-  // 例: 5回達成するごとに要求数が 1.2倍 ずつ増えるイメージ
+
   currentMission = { ...selected };
   // 4. 次回のために難易度倍率を少し上げる（例: 1ミッションごとに5%アップ）
-  currentMission.count = Math.ceil((selected.count+missionCompletedCount) * missionDifficultyMultiplier*0.1); // 0.1;
+  if (currentMission.type == "keep_limit") {
+    currentMission.count = Math.min(Math.ceil(selected.count +missionDifficultyMultiplier),10);
+  }if (currentMission.type == "shop_action") {
+        currentMission.count = Math.min(Math.ceil(selected.count +missionDifficultyMultiplier/2),8);
+  } else {
+    currentMission.count = Math.ceil((selected.count+missionCompletedCount) * missionDifficultyMultiplier*0.1); // 0.1;
+  }
+    
+    
+  
 console.log("スコア", missionCompletedCount, "難易度", currentMission.count);
 
 //
@@ -1542,7 +1551,7 @@ function completeMission() {
   
   // 画面の数値を更新
   document.getElementById("score").textContent = missionCompletedCount;
-  
+  // ミッションクリアのエフェクト
   showMoneyEffect(window.innerWidth/2, window.innerHeight/2, "MISSION CLEAR!", 40);
   startNewMission(); 
 }
