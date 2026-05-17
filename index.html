@@ -423,7 +423,8 @@ body {
 }
 
 .result-stats {
-  font-size:  clamp(16px, 2.5vh, 100px);;
+  font-size:  clamp(16px, 2.5vh, 100px);
+  line-height:26px;
   margin-bottom: 30px;
 }
 
@@ -544,7 +545,11 @@ body {
 <div id="resultScreen" style="display: none;">
   <h2>業務終了</h2>
   <div class="result-stats">
-    <p>こなした数: <span id="finalCount">0</span>個</p>
+    <div id="endlessOnlyResult">
+    <p>タスク数: <span id="finalmissions">0</span>回</p>
+    <p>業務時間: <span id="finalTime">0</span>秒</p>
+    </div>
+    <p>いれた数: <span id="finalCount">0</span>個</p>
     <p>稼いだ額: ￥<span id="finalMoney">0</span></p>
   </div>
   
@@ -590,7 +595,7 @@ document.getElementById("endlessBtn").onclick = () => {
 
 let missionCompletedCount = 0; // エンドレス用
 let gameTimerId = null;        // メインタイマー（一元管理）
-
+let RealtimeId = null; 
 function startSequence() {
   // --- 1. 要素の安全な取得チェック ---
   const ui = {
@@ -630,6 +635,10 @@ shopResetCost = 2;
     missionCompletedCount = 0;
     ui.scoreVal.textContent = "0";
     durability = 100;
+    Realtime=0;
+    //時間を秒にする
+    if (RealtimeId) clearInterval(RealtimeId);
+    RealtimeId =setInterval(() => {checkKeepMission();Realtime++},1000);
     initEndlessMode(); // ミッションと耐久力をセット
   } else {
 
@@ -664,6 +673,7 @@ function startGame() {
   // 古いタイマーがあれば確実に消す
   if (gameTimerId) clearInterval(gameTimerId);
 
+
   const timeDisplay = document.getElementById("time");
 
   gameTimerId = setInterval(() => {
@@ -671,7 +681,7 @@ function startGame() {
       // --- エンドレスモード：ミッション残り時間をカウント ---
       missionTimer--;
       timeDisplay.textContent = missionTimer;
-      
+     
       if (missionTimer <= 0) {
         clearInterval(gameTimerId);
         endGame("ミッション失敗！");
@@ -688,7 +698,9 @@ function startGame() {
         endGame(); // タイムアップ
       }
     }
-  },Math.max(100, 1000-(missionDifficultyMultiplier-1)*50));
+  },1000||Math.max(100, 1000-(missionDifficultyMultiplier-1)*25));
+
+
 }
 // --- タイムアップ時の処理 ---
 function endGame(reason) {
@@ -701,6 +713,7 @@ function endGame(reason) {
     clearInterval(gameTimerId);
     gameTimerId = null;
   }
+  if (RealtimeId) clearInterval(RealtimeId);
 // --- 皿の見た目をリセット ---
 durability = 100; // 耐久値リセット
   const plate = document.getElementById("plate");
@@ -724,7 +737,16 @@ durability = 100; // 耐久値リセット
   // 2. 【追加】画面上のおみくじを全削除
   const activeOmikujis = document.querySelectorAll('.omikuji');
   activeOmikujis.forEach(o => o.remove());
-  // 3. スコア反映と表示切り替え
+// 3. モードによる表示の切り替え
+  const endlessStats = document.getElementById("endlessOnlyResult");
+  if(isEndless) {
+    endlessStats.style.display = "block";
+    document.getElementById("finalmissions").textContent = missionCompletedCount;
+    document.getElementById("finalTime").textContent = Realtime;
+  }else {
+   endlessStats.style.display = "none";
+
+  }
   document.getElementById("finalCount").textContent = score;
   document.getElementById("finalMoney").textContent = money;
   document.getElementById("resultScreen").style.display = "flex";
@@ -753,6 +775,8 @@ if (isEndless) {
   performReset();
   
   // ゲーム開始
+    if (RealtimeId) clearInterval(RealtimeId);
+    if (isEndless) RealtimeId =setInterval(() => {checkKeepMission();Realtime++},1000);
   restartSpawnTimer();
   startGame();
 }
@@ -788,13 +812,16 @@ function goToTitle() {
 
 
 function spawnOmikuji() {
+
   const gameScreen = document.getElementById("gameScreen");
   const omikuji = document.createElement("div");
   omikuji.className = "omikuji";
   
   // ランダムに選んだアイテムのID（種類）を保存しておく
-  const typeIdx = Math.floor(Math.random() * ITEM_LIST.length);
-  const typeId = ITEM_LIST[typeIdx].id; // "luck_daikichi" や "luck_kyo" など
+
+    const typeIdx = Math.floor(Math.random() * ITEM_LIST.length);
+    const typeId = ITEM_LIST[typeIdx].id; // "luck_daikichi" や "luck_kyo" など
+  
   
   omikuji.dataset.type = typeId; // ここで種類を記憶！
 // --- 【追加】最大数制限 (例: 50個まで) ---
@@ -972,7 +999,18 @@ function checkDrop(omikuji) {
 if (scored) {
     const finalPay = Math.floor(earnedMoney * gameState.moneyMultiplier);
     money += finalPay;
-
+//お金でタイム増加
+if (isEndless && hasAutoTimer) {
+  moneyBufferForTimer += finalPay;
+  if (moneyBufferForTimer >= 30) {
+    const extraSeconds = Math.floor(moneyBufferForTimer / 30);
+    missionTimer += extraSeconds;
+    moneyBufferForTimer %= 30; // 余りを次に持ち越す
+    //console.log(`秒数が増えました：${extraSeconds}秒`);
+    // 秒数が増えた演出（任意）
+    showMoneyEffect(window.innerWidth / 2, 5, `+${extraSeconds}s`, 250);
+  }
+}
     // --- ここがポイント：スコア加算 ---
     // モードに関わらず「入れた数」をカウントアップ
     score++; 
@@ -1118,6 +1156,7 @@ function restartSpawnTimer() {
     spawnTimer = null;
   }
 
+
   // gameStateに設定された間隔でおみくじを降らせる
   spawnTimer = setInterval(() => {
     spawnOmikuji();
@@ -1150,25 +1189,57 @@ function attemptReset() {
 
 // 実際の入れ替え処理
 function performReset() {
+  // 1. 現在のモードに合うアイテムだけを抽出
+  const currentMode = isEndless ? "endless" : "normal";
+  const availablePool = ITEM_LIST.filter(item => {
+    const modeMatch = (item.mode === "all" || item.mode === currentMode);
+    let notOwned = true;
+    if (item.id === "auto_timer" && hasAutoTimer) notOwned = false;
+    if (item.id === "auto_refresh" && hasAutoRefresh) notOwned = false;
+    return modeMatch && notOwned;
+  });
+
   currentItems = [];
+  const shuffled = availablePool.sort(() => 0.5 - Math.random());
+
   for (let i = 0; i < 2; i++) {
-    const randomItem = ITEM_LIST[Math.floor(Math.random() * ITEM_LIST.length)];
+    if (shuffled.length <= i) break;
+
+    // --- ここから価格計算 ---
+    let randomItem = { ...shuffled[i] }; // 元のデータを壊さないようコピー
+    
+    if (randomItem.id === "mission_skip") {
+      // ミッション達成数 × 50円 を加算（1周目=0円、2周目=+50円...）
+      const extraCost = missionCompletedCount * 50;
+      randomItem.price = randomItem.price + extraCost;
+      console.log("任務スキップ価格更新:", randomItem.price);
+    }
+    // -----------------------
+
     const currentLv = gameState.itemLevels[randomItem.id] || 0;
     const isMax = currentLv >= 3;
-    
-    currentItems.push({ ...randomItem, soldOut: isMax });
+    const isSoldOut = isMax || (randomItem.isPassive && ((randomItem.id === "auto_timer" && hasAutoTimer) || (randomItem.id === "auto_refresh" && hasAutoRefresh)));
+
+    // 計算済みのアイテムを配列に入れる
+    currentItems.push({ ...randomItem, soldOut: isSoldOut });
     
     const slot = document.getElementById(`item${i}`);
     slot.classList.remove("sold-out");
-    if (isMax) slot.classList.add("sold-out");
+    if (isSoldOut) slot.classList.add("sold-out");
 
-    // テキスト反映
+    // テキスト反映（必ず randomItem.price を使う）
+    //slot.querySelector(".item-name").textContent = randomItem.name;
     slot.querySelector(".item-price").textContent = `￥${randomItem.price}`;
-    slot.querySelector(".item-level").textContent = `Lv.${currentLv}`; // Lvを表示
+    
+    const lvDiv = slot.querySelector(".item-level");
+    if (lvDiv) {
+      lvDiv.textContent = (randomItem.isPassive || randomItem.isOneTime) ? "" : `Lv.${currentLv}`;
+    }
     
     const imgDiv = slot.querySelector(".item-image");
     if (imgDiv) imgDiv.style.backgroundImage = `url('${randomItem.image}')`;
   }
+
   document.getElementById("resetBtn").textContent = `更新 ￥${shopResetCost}`;
   updateShopVisuals();
 }
@@ -1192,9 +1263,20 @@ function updateShopVisuals() {
   } else {
     resetBtn.classList.remove("can-buy-reset");
   }
+  // 両方のアイテムが買えない（または在庫なし）状態をチェック
+  if (isEndless && hasAutoRefresh) {
+    // 例：現在のショップの商品が両方売り切れた判定
+    // (実装に合わせて調整してください。例：ボタンが全て 'Sold Out' かどうか)
+    const activeButtons = document.querySelectorAll('.item-slot:not(.sold-out)');
+    //console.log(activeButtons);
+    if (activeButtons.length === 0) {
+      setTimeout(() => attemptReset(), 500); // 0.5秒後に自動更新
+    }
+  }
 }
-function buyItem(index) {
-  const item = currentItems[index];
+// 購入
+function buyItem(slotIndex) { // IDではなくスロット番号(0か1)で呼ぶようにすると確実
+  const item = currentItems[slotIndex];
   const id = item.id;
   const currentLv = gameState.itemLevels[id] || 0;
 
@@ -1207,6 +1289,16 @@ function buyItem(index) {
     // 2. 自身のレベルを上げる
     gameState.itemLevels[id]++;
 
+if (id === "auto_timer") {
+    hasAutoTimer = true;
+    // 重複購入を防ぐならここでリストから消すか非活性にする
+  } 
+  else if (id === "auto_refresh") {
+    hasAutoRefresh = true;
+  } 
+  else if (id === "mission_skip") {
+    completeMission(); // 現在のミッションを強制クリア
+  }
     // 3. 【重要】排他ロジック（他方のレベルを下げる）を実行
     handleExclusion(id);
 
@@ -1227,27 +1319,50 @@ function buyItem(index) {
   }
   }
 }
+//アイテムの売り切れ見た目
 function refreshShopUI() {
   currentItems.forEach((item, i) => {
     const slot = document.getElementById(`item${i}`);
     const currentLv = gameState.itemLevels[item.id] || 0;
 
-    // レベル表示を最新にする
+    // --- 修正箇所：レベル表示の制御 ---
     const lvDiv = slot.querySelector(".item-level");
-    if (lvDiv) lvDiv.textContent = `Lv.${currentLv}`;
+    if (lvDiv) {
+      if (item.isPassive) {
+        // パッシブアイテムの場合
+        const hasOwned = (item.id === "auto_timer" && hasAutoTimer) || (item.id === "auto_refresh" && hasAutoRefresh);
+        lvDiv.textContent = hasOwned ? "ON" : ""; // 持っていればON、なければ空欄
+      } else if (item.isOneTime) {
+        // 任務スキップなどの使い切りアイテムの場合
+        lvDiv.textContent = "パス";
+      } else {
+        // 通常のレベルアップアイテムの場合
+        lvDiv.textContent = `Lv.${currentLv}`;
+      }
+    }
 
-    // 売り切れ判定の更新
-    // 「今回買った」または「累計レベルが3に達している」なら sold-out クラスをつける
-    if (item.soldOut || currentLv >= 3) {
+    // --- 売り切れ判定の更新 ---
+    // 判定条件を整理
+    let isSoldOut = item.soldOut;
+    
+    if (!item.isPassive && !item.isOneTime) {
+      // 通常アイテムはLv3で売り切れ
+      if (currentLv >= 3) isSoldOut = true;
+    } else if (item.isPassive) {
+      // パッシブアイテムは購入済みなら売り切れ
+      if ((item.id === "auto_timer" && hasAutoTimer) || (item.id === "auto_refresh" && hasAutoRefresh)) {
+        isSoldOut = true;
+      }
+    }
+
+    if (isSoldOut) {
       slot.classList.add("sold-out");
     } else {
       slot.classList.remove("sold-out");
       slot.classList.remove("can-buy");
-
     }
   });
 
-  // 更新ボタンの光りかたなどもチェック
   updateShopVisuals();
 }
 // 排他ロジックを整理
@@ -1319,20 +1434,29 @@ function applyItemEffect(id, level) {
   }
 }
 function resetAllItemLevels() {
-  // すべてのアイテムIDを0にリセット
+  // 1. すべてのアイテムレベルを0にリセット
   const ids = ["spawn_up", "spawn_down", "money", "luck_daikichi", "luck_kichi", "luck_kyo"];
   ids.forEach(id => {
     gameState.itemLevels[id] = 0;
   });
 
-  // 倍率や間隔も初期値に戻す
+  // 2. パッシブアイテムの購入状態をリセット（ここを追加）
+  hasAutoTimer = false;
+  hasAutoRefresh = false;
+  moneyBufferForTimer = 0; // 30円カウント用のバッファもリセット
+
+  // 3. 倍率や間隔も初期値に戻す
   gameState.moneyMultiplier = 1;
   gameState.spawnInterval = 1200;
   
-  console.log("アイテムレベルをすべてリセットしました");
+  // 4. ミッション関連の数値もリセット（エンドレス用）
+  missionCompletedCount = 0;
+  missionDifficultyMultiplier = 1.0;
+  
+  console.log("アイテムレベルおよびパッシブ機能をすべてリセットしました");
 }
 
-
+// おみくじの皿の耐久力を減らす
 function update() {
   const omikujis = document.querySelectorAll(".omikuji");
 
@@ -1368,7 +1492,7 @@ function update() {
 
   if (isEndless) {
     calculateDurability();
-     
+      
   }
 }
 function calculateDurability() {
@@ -1386,7 +1510,7 @@ function calculateDurability() {
     }
     updateDurabilityUI();
   }
-  checkKeepMission();
+
 }
 // --- 耐久値を更新する関数 ---
 
@@ -1441,7 +1565,7 @@ function checkKeepMission() {
   // 1個以上、かつ10個以下の場合
   if (count >= 0 && count <= 10) {
     keepTimer +=1000; // 毎フレーム(約16.6ms)加算
-    console.log("keepTimer", keepTimer);
+   // console.log("keepTimer", keepTimer);
     // 1000ms（1秒）経過したら
     if (keepTimer >= 1000) {
       // 進捗を「1」増やす（これが画面上の「1/5」の「1」になります）
@@ -1449,7 +1573,7 @@ function checkKeepMission() {
       keepTimer = 0; // 次の1秒のためにリセット
       
       // デバッグ用：動いているかコンソールで確認
-      console.log("1秒キープ成功！現在の進捗:", missionProgress);
+      //console.log("1秒キープ成功！現在の進捗:", missionProgress);
     }
   } else {
     // 範囲外（0個または11個以上）になったらタイマーをリセット
@@ -1457,7 +1581,7 @@ function checkKeepMission() {
     keepTimer = 0; 
   }
 }
-
+// --- ミッションを開始する関数 ---
 function startNewMission() {
 // 1. 山札が空、または存在しない場合は全ミッションを補充
   if (availableMissions.length === 0) {
@@ -1469,6 +1593,7 @@ function startNewMission() {
       [availableMissions[i], availableMissions[j]] = [availableMissions[j], availableMissions[i]];
     }
     missionDifficultyMultiplier += 1;
+     startGame();// カウントダウン開始
     console.log("シャッフル", missionDifficultyMultiplier);
   }
 
@@ -1480,8 +1605,8 @@ function startNewMission() {
   currentMission = { ...selected };
   // 4. 次回のために難易度倍率を少し上げる（例: 1ミッションごとに5%アップ）
   if (currentMission.type == "keep_limit") {
-    currentMission.count = Math.min(Math.ceil(selected.count +missionDifficultyMultiplier),10);
-  }if (currentMission.type == "shop_action") {
+    currentMission.count = Math.min(Math.ceil(selected.count +missionDifficultyMultiplier*0.6),12);
+  }else if (currentMission.type == "shop_action") {
         currentMission.count = Math.min(Math.ceil(selected.count +missionDifficultyMultiplier/2),8);
   } else {
     currentMission.count = Math.ceil((selected.count+missionCompletedCount) * missionDifficultyMultiplier*0.1); // 0.1;
