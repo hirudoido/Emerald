@@ -764,7 +764,7 @@ if (isEndless) {
   money = 0;
   timeLeft = 10;
   shopResetCost = 2;
-
+  Realtime=0;
   // UI更新
   document.getElementById("money").textContent = money;
   document.getElementById("score").textContent = score;
@@ -1413,7 +1413,7 @@ function applyItemEffect(id, level) {
       // 基本1200ms。アップ1につき-300ms、ダウン1につき+500ms
       // (例: アップLv1, ダウンLv0 => 900ms)
       // (例: アップLv1, ダウンLv1 => 1400ms ※打ち消し合いが起こるのでこのケースは基本ないはず)
-      let newInterval = 1200 - (upLv * 300) + (downLv * 500);
+      let newInterval = 1200 - (upLv * 300) + (downLv * 300);
       
       // 速すぎ・遅すぎの制限
       gameState.spawnInterval = Math.max(200, Math.min(3000, newInterval));

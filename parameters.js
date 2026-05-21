@@ -16,7 +16,7 @@ const PARAMS = {
 //   おみくじの種類・報酬・画像設定
 // ==========================================
 const OMIKUJI_TYPES = {
-  '大吉': { color: '#ff1111', goodPay: 777, badPay: 0,  image: '1.png' },
+  '大吉': { color: '#ff1111', goodPay: 50, badPay: 0,  image: '1.png' },
   '吉':   { color: '#ff8800', goodPay: 30, badPay: 5,  image: '2.png' },
   '中吉': { color: '#ffcc00', goodPay: 20, badPay: 10, image: '3.png' },
   '小吉': { color: '#88ff00', goodPay: 10, badPay: 20,  image: '4.png' },
@@ -46,7 +46,7 @@ const gameState = {
 const ITEM_LIST =[
   { id: "spawn_up",   name: "降る量アップ", price: 15, image: "daikichi.jpg",mode: "all" },
   { id: "spawn_down", name: "降る量ダウン", price: 10, image: ".png" ,mode: "all"}, // 追加
-  { id: "luck_daikichi", name: "大吉の加護", price: 20, image: "1.png" ,mode: "all"},
+  { id: "luck_daikichi", name: "大吉の加護", price: 30, image: "1.png" ,mode: "all"},
   { id: "luck_kichi",    name: "吉の加護",   price: 15, image: "2.png" ,mode: "all"},
   { id: "luck_kyo",      name: "凶の呪い",   price: 10, image: "6.png" ,mode: "all"},
   { id: "money",      name: "報酬アップ",   price: 20, image: "kin.png" ,mode: "all"},
