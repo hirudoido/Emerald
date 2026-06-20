@@ -16,7 +16,7 @@ const PARAMS = {
 //   おみくじの種類・報酬・画像設定
 // ==========================================
 const OMIKUJI_TYPES = {
-  '大吉': { color: '#ff1111', goodPay: 50, badPay: 0,  image: '1.png' },
+  '大吉': { color: '#ff1111', goodPay: 50, badPay: 0,  image: 'Daikiti.png' },
   '吉':   { color: '#ff8800', goodPay: 30, badPay: 5,  image: '2.png' },
   '中吉': { color: '#ffcc00', goodPay: 20, badPay: 10, image: '3.png' },
   '小吉': { color: '#88ff00', goodPay: 10, badPay: 20,  image: '4.png' },
