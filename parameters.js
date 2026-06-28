@@ -16,12 +16,12 @@ const PARAMS = {
 //   おみくじの種類・報酬・画像設定
 // ==========================================
 const OMIKUJI_TYPES = {
-  '大吉': { color: '#ff1111', goodPay: 50, badPay: 0,  image: 'Daikiti.png' },
-  '吉':   { color: '#ff8800', goodPay: 30, badPay: 5,  image: '2.png' },
-  '中吉': { color: '#ffcc00', goodPay: 20, badPay: 10, image: '3.png' },
-  '小吉': { color: '#88ff00', goodPay: 10, badPay: 20,  image: '4.png' },
-  '末吉': { color: '#00ffcc', goodPay: 5, badPay: 25,  image: '5.png' },
-  '凶':   { color: '#555555', goodPay: 0,  badPay: 30, image: '6.png' }
+  '大吉': { color: '#00ff51', goodPay: 50, badPay: 0,  image: './mikuji/Daikiti.png' },
+  '吉':   { color: '#e2ff26', goodPay: 30, badPay: 5,  image: './mikuji/Kiti.png' },
+  '中吉': { color: '#ff7300', goodPay: 20, badPay: 10, image: './mikuji/Tyukiti.png' },
+  '小吉': { color: '#ff0000', goodPay: 10, badPay: 20,  image: './mikuji/Syoukiti.png' },
+  '末吉': { color: '#9700bd', goodPay: 5, badPay: 25,  image: './mikuji/Suekiti.png' },
+  '凶':   { color: '#100848', goodPay: 0,  badPay: 30, image: './mikuji/Kyou.png' }
 };
 // アイテムデータ
 // --- ゲームの状態・アイテムレベル (最大3) ---
@@ -48,13 +48,13 @@ const ITEM_LIST =[
   { id: "spawn_down", name: "降る量ダウン", price: 10, image: ".png" ,mode: "all"}, // 追加
   { id: "luck_daikichi", name: "大吉の加護", price: 30, image: "1.png" ,mode: "all"},
   { id: "luck_kichi",    name: "吉の加護",   price: 15, image: "2.png" ,mode: "all"},
-  { id: "luck_kyo",      name: "凶の呪い",   price: 10, image: "6.png" ,mode: "all"},
+  { id: "luck_kyo",      name: "凶の呪い",   price: 10, image: './mikuji/Kyou.png' ,mode: "all"},
   { id: "money",      name: "報酬アップ",   price: 20, image: "kin.png" ,mode: "all"},
   { id: "mission_skip", name: "任務スキップ", price: 100, image: "4.png", isOneTime: true ,mode: "endless"},
   { id: "auto_timer", name: "自動タイマー", price: 50, image: "3.png", isPassive: true ,mode: "endless"},
   { id: "auto_refresh", name: "自動更新", price: 70,image: "5.png", isPassive: true ,mode: "endless"},
 ];
-
+// mode: "all" or "normal"
 // 購入済みフラグを保持する変数
 let hasAutoTimer = false;
 let hasAutoRefresh = false;
