@@ -61,29 +61,55 @@ body {
 #badZone, #goodZone {
   position: absolute;
   bottom: 35%;
-  width: 28%;          /* 画面幅の28%に固定 */
-  height: 20%;         /* 高さも%にすると縦長デバイスでも安定します */
+  width: 18%;          /* 画面幅の28%に固定 */
+  height: 10%;         /* 高さも%にすると縦長デバイスでも安定します */
   border: 4px solid;
   border-bottom: none; 
-  background: rgba(255, 255, 255, 0.2);
+  background-size: cover;
+  /*background: rgba(255, 255, 255, 0.2);*/
   z-index: 5;
+
 }
 
 #badZone { 
-  left: -12%;             /* 左端にぴったり配置 */
+  background-image: url('2.png'); /* ここに上のエリア用画像のパスを入れる */
+  left: 0%;             /* 左端にぴったり配置 */
   border-color: purple; 
   border-left: none;   /* 左側の線を消すとよりゴールっぽくなります */
-  transform: rotate(-10deg);
+ transform: rotate(-10deg);/* 回転 */
   transform-origin: left bottom; /* 左下を軸に回転 */
 }
 
 #goodZone { 
-  right: -12%;            /* 右端にぴったり配置 */
+  right: 0%;            /* 右端にぴったり配置 */
   border-color: red; 
   border-right: none;  /* 右側の線を消す */
   transform: rotate(10deg);
   transform-origin: right bottom; /* 右下を軸に回転 */
+  background-image: url('1.png'); /* ここに上のエリア用画像のパスを入れる */
 }
+
+/* 横揺れ（振動）のアニメーション定義 */
+@keyframes zoneShake-R {
+0% { transform: translateY(0) scaleY(1)rotate(10deg); }
+  9% { transform: translateX(12px) scaleY(0.8)rotate(16deg); } /* 下に沈みつつ少し潰れる */
+    50% { transform: translateX(-2px) scaleY(1.1)rotate(8deg); }
+  100% { transform: translateY(0) scaleY(1)rotate(10deg); }
+}
+@keyframes zoneShake-L {
+0% { transform: translateY(0) scaleY(1)rotate(-10deg); }
+  9% { transform: translateX(-12px) scaleY(0.8)rotate(-16deg); } /* 下に沈みつつ少し潰れる */
+      50% { transform: translateX(2px) scaleY(1.1)rotate(-8deg); }
+  100% { transform: translateY(0) scaleY(1)rotate(-10deg); }
+}
+/* アニメーションをトリガーするためのクラス */
+.shake-active-R {
+  animation: zoneShake-R 0.5s ease-in-out;
+}
+.shake-active-L {
+  animation: zoneShake-L 0.5s ease-in-out;
+}
+
 /* --- 4. 皿の位置を固定 --- */
 #plate {
   position: absolute;
@@ -226,7 +252,8 @@ body {
 
 .menu-btn {
   padding: 15px 0;
-  font-size: 1.2rem;
+  font-size:  clamp(40px, 4vh, 70px);;
+
   font-weight: bold;
   background: #fff;
   border: 2px solid #2e7d32; /* 緑の枠線 */
@@ -315,7 +342,7 @@ body {
 .item-slot {
   position: relative;
   width: 20%;
-  height: 100%;
+  height: 15Vh;
   background: rgba(255, 255, 255, 0.9);
   border: 3px solid #ccc;
   border-radius: 10px;
@@ -324,11 +351,18 @@ body {
   align-items: center;
   justify-content: space-around;
 }
+.item-price{
+  position: absolute;
+  bottom: 6px;
+  font-size:  clamp(16px, 1.7vh, 100px);;
+  font-weight: bold;
+  color: #0b0b0b;
+}
 .item-level {
   position: absolute;
-  top: 2px;
+  top: 5px;
   right: 5px;
-  font-size:  clamp(16px, 1.5vh, 100px);;
+  font-size:  clamp(16px, 1.7vh, 100px);;
   font-weight: bold;
   color: #0b0b0b;
 }
@@ -342,7 +376,7 @@ body {
 }
 .item-image {
   width: 100%;       /* 必須：幅 */
-  height: 100px;      /* 必須：高さ */
+  height: 15vh;      /* 必須：高さ */
   background-size: contain;      /* 画像を枠内に収める */
   background-repeat: no-repeat;  /* 繰り返さない */
   background-position: center;   /* 中央に配置 */
@@ -370,9 +404,10 @@ body {
 }
 .item-slot.sold-out::after {
   content: "SOLD OUT";
-  color: red;
+  color: rgb(2, 2, 2);
+
   font-weight: bold;
-  font-size:  clamp(16px, 1.5vh, 100px);;
+  font-size:  clamp(10px, 1.2vh, 19px);;
 }
 
 #resetBtn {
@@ -404,7 +439,7 @@ body {
 /* --- おみくじの結果表示 --- */
 #resultScreen {
   position: absolute;
-  top: 0; left: 0;
+  top: 5; left: 0;
   width: 100%; height: 100%;
   background: rgba(0, 0, 0, 0.85); /* 背景を暗くして文字を目立たせる */
   color: white;
@@ -467,7 +502,7 @@ body {
 }
 /* 耐久力バーのレイアウト調整 */
 #time {
-  font-size: clamp(16px, 2.5vh, 100px);
+  font-size: clamp(18px, 2.6vh, 100px);
   line-height: 1;
   font-weight: bold;
   color: #fff;
@@ -475,7 +510,7 @@ body {
 }
 
 #missionTextDisplay {
-  font-size: clamp(16px, 1.5vh, 100px);
+  font-size: clamp(12px, 2.2vh, 100px);
   color: #00ffcc;
   background: rgba(0, 0, 0, 0.6); /* 背景を黒透過にして読みやすく */
   padding: 4px 12px;
@@ -501,8 +536,8 @@ body {
 <div id="gameScreen">
 <div id="info" style="display: none;">
   <div class="status-box side">
-    <div id="scoreLabel" style="font-size:  clamp(16px, 1.9vh, 100px);">入れた数</div>
-    <div id="score" style="font-size:  clamp(16px, 2.1vh, 100px);; font-weight: bold;">0</div>
+    <div id="scoreLabel" style="font-size:  clamp(17px, 1.9vh, 100px);">入れた数</div>
+    <div id="score" style="font-size:  clamp(17px, 2.1vh, 100px);; font-weight: bold;">0</div>
   </div>
 
   <div class="status-box center" id="timeContainer">
@@ -511,8 +546,8 @@ body {
   </div>
 
   <div class="status-box side">
-    <div style="font-size:  clamp(16px, 1.9vh, 100px);">所持金</div>
-    <div style="font-size:  clamp(16px, 2.0vh, 100px); font-weight: bold;">￥<span id="money">0</span></div>
+    <div style="font-size:  clamp(17px, 1.9vh, 100px);">所持金</div>
+    <div style="font-size:  clamp(17px, 2.0vh, 100px); font-weight: bold;">￥<span id="money">0</span></div>
   </div>
 </div>
 
@@ -559,8 +594,8 @@ body {
   </div>
 </div>
 
-  <div id="badZone" style="display:none;">悪い</div>
-  <div id="goodZone" style="display:none;">良い</div>
+  <div id="badZone" style="display:none;"></div>
+  <div id="goodZone" style="display:none;"></div>
   <div id="plate" style="display:none;"><div id="plateCrack"></div></div>
 
 
@@ -646,7 +681,7 @@ shopResetCost = 2;
     ui.scoreLabel.textContent = "入れた数";
     score = 0;
     ui.scoreVal.textContent = "0";
-    timeLeft = 10; // 通常モードの初期秒数
+    timeLeft =PARAMS.gameTime; // 通常モードの初期秒数
       document.getElementById("time").textContent = timeLeft;
   }
 
@@ -762,7 +797,7 @@ if (isEndless) {
   // ゲームデータの初期化
   score = 0;
   money = 0;
-  timeLeft = 10;
+  timeLeft = PARAMS.gameTime;
   shopResetCost = 2;
   Realtime=0;
   // UI更新
@@ -794,7 +829,7 @@ function goToTitle() {
   // 数値と表示のリセット
   money = 0;
   score = 0;
-  timeLeft = 10;
+  timeLeft = PARAMS.gameTime;
   shopResetCost = 2;
 
   // 画面の切り替え
@@ -970,6 +1005,28 @@ function spawnOmikuji() {
   };}
 
 // --- 良い・悪いゾーンの判定 ---
+// ゾーンを横揺れさせる関数
+function shakeZone(zoneId) {
+  const zone = document.getElementById(zoneId);
+  if (!zone) return;
+
+  // すでにクラスがついている場合は一度消してリセット（連続で入った時用）
+  if (zoneId=="goodZone") {  
+  zone.classList.remove("shake-active-R");
+  // ほんのわずかなディレイを入れてからクラスを再付与する
+  void zone.offsetWidth; // 👈 CSSアニメーションを強制的に再スタートさせる魔法の1行
+  zone.classList.add("shake-active-R");// 0.3秒後にクラスを外す
+  }else{
+      zone.classList.remove("shake-active-L");
+  // ほんのわずかなディレイを入れてからクラスを再付与する
+  void zone.offsetWidth; // 👈 CSSアニメーションを強制的に再スタートさせる魔法の1行
+  zone.classList.add("shake-active-L");// 0.3秒後にクラスを外す
+  }
+  setTimeout(() => {
+    zone.classList.remove("shake-active-R");
+        zone.classList.remove("shake-active-L");
+  }, 200);
+}
 let money = 0; // お金の変数を追加
 function checkDrop(omikuji) {
   const rect = omikuji.getBoundingClientRect();
@@ -990,15 +1047,19 @@ function checkDrop(omikuji) {
 
   if (isOverlap(rect, goodGoal)) {
     earnedMoney = config.goodPay;
+    shakeZone("goodZone");
     scored = true;
   } else if (isOverlap(rect, badGoal)) {
     earnedMoney = config.badPay;
+    shakeZone("badZone");
     scored = true;
   }
 
 if (scored) {
     const finalPay = Math.floor(earnedMoney * gameState.moneyMultiplier);
+
     money += finalPay;
+
 //お金でタイム増加
 if (isEndless && hasAutoTimer) {
   moneyBufferForTimer += finalPay;
@@ -1210,7 +1271,7 @@ function performReset() {
     
     if (randomItem.id === "mission_skip") {
       // ミッション達成数 × 50円 を加算（1周目=0円、2周目=+50円...）
-      const extraCost = missionCompletedCount * 50;
+      const extraCost = missionCompletedCount * 20;
       randomItem.price = randomItem.price + extraCost;
       console.log("任務スキップ価格更新:", randomItem.price);
     }
