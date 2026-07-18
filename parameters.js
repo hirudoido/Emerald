@@ -44,15 +44,15 @@ const gameState = {
 // アイテムリストを効果付きで更新
 
 const ITEM_LIST =[
-  { id: "spawn_up",   name: "降る量アップ", price: 15, image: "daikichi.jpg",mode: "all" },
-  { id: "spawn_down", name: "降る量ダウン", price: 10, image: ".png" ,mode: "all"}, // 追加
-  { id: "luck_daikichi", name: "大吉の加護", price: 30, image: "1.png" ,mode: "all"},
-  { id: "luck_kichi",    name: "吉の加護",   price: 15, image: "2.png" ,mode: "all"},
+  { id: "spawn_up",   name: "降る量アップ", price: 15, image: "./mikuji/Zouka.png",mode: "all" },
+  { id: "spawn_down", name: "降る量ダウン", price: 10, image: "./mikuji/Gensyo.png" ,mode: "all"}, // 追加
+  { id: "luck_daikichi", name: "大吉の加護", price: 30, image: "./mikuji/Daikiti.png" ,mode: "all"},
+  { id: "luck_kichi",    name: "吉の加護",   price: 15, image: "./mikuji/Kiti.png" ,mode: "all"},
   { id: "luck_kyo",      name: "凶の呪い",   price: 10, image: './mikuji/Kyou.png' ,mode: "all"},
-  { id: "money",      name: "報酬アップ",   price: 20, image: "kin.png" ,mode: "all"},
-  { id: "mission_skip", name: "任務スキップ", price: 100, image: "4.png", isOneTime: true ,mode: "endless"},
-  { id: "auto_timer", name: "自動タイマー", price: 50, image: "3.png", isPassive: true ,mode: "endless"},
-  { id: "auto_refresh", name: "自動更新", price: 70,image: "5.png", isPassive: true ,mode: "endless"},
+  { id: "money",      name: "報酬アップ",   price: 20, image: "./mikuji/Kin.png" ,mode: "all"},
+  { id: "mission_skip", name: "任務スキップ", price: 100, image: "./mikuji/Kansui.png", isOneTime: true ,mode: "endless"},
+  { id: "auto_timer", name: "自動タイマー", price: 50, image: "./mikuji/Entyou.png", isPassive: true ,mode: "endless"},
+  { id: "auto_refresh", name: "自動更新", price: 70,image: "./mikuji/Hoju.png", isPassive: true ,mode: "endless"},
 ];
 // mode: "all" or "normal"
 // 購入済みフラグを保持する変数

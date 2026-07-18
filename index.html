@@ -362,9 +362,19 @@ body {
   position: absolute;
   top: 5px;
   right: 5px;
-  font-size:  clamp(16px, 1.7vh, 100px);;
+  font-size:  clamp(16px, 1.7vh, 100px);
   font-weight: bold;
   color: #0b0b0b;
+  /* 白色の外線（縁取り）を追加 */
+  text-shadow: 
+     2px  2px 0 #fff,
+    -2px  2px 0 #fff,
+     2px -2px 0 #fff,
+    -2px -2px 0 #fff,
+     2px  0px 0 #fff,
+    -2px  0px 0 #fff,
+     0px  2px 0 #fff,
+     0px -2px 0 #fff;
 }
 /* 買える時に光る演出 */
 /* 買える時に光る演出（より目立たせる） */
@@ -1271,7 +1281,7 @@ function performReset() {
     
     if (randomItem.id === "mission_skip") {
       // ミッション達成数 × 50円 を加算（1周目=0円、2周目=+50円...）
-      const extraCost = missionCompletedCount * 20;
+      const extraCost = missionDifficultyMultiplier * 20;
       randomItem.price = randomItem.price + extraCost;
       console.log("任務スキップ価格更新:", randomItem.price);
     }
@@ -1293,10 +1303,20 @@ function performReset() {
     slot.querySelector(".item-price").textContent = `￥${randomItem.price}`;
     
     const lvDiv = slot.querySelector(".item-level");
-    if (lvDiv) {
-      lvDiv.textContent = (randomItem.isPassive || randomItem.isOneTime) ? "" : `Lv.${currentLv}`;
-    }
-    
+if (lvDiv) {
+  if (randomItem.isPassive) {
+    // パッシブアイテムの場合：持っていればON、なければOFF
+    const hasOwned = (randomItem.id === "auto_timer" && hasAutoTimer) || (randomItem.id === "auto_refresh" && hasAutoRefresh);
+    lvDiv.textContent = hasOwned ? "ON" : "OFF";
+  } else if (randomItem.isOneTime) {
+    // 使い切りアイテムの場合：空白
+    lvDiv.textContent = "";
+  } else {
+    // 通常のレベルアップアイテムの場合：Lv.x
+    lvDiv.textContent = `Lv.${currentLv}`;
+  }
+}
+        
     const imgDiv = slot.querySelector(".item-image");
     if (imgDiv) imgDiv.style.backgroundImage = `url('${randomItem.image}')`;
   }
@@ -1392,10 +1412,10 @@ function refreshShopUI() {
       if (item.isPassive) {
         // パッシブアイテムの場合
         const hasOwned = (item.id === "auto_timer" && hasAutoTimer) || (item.id === "auto_refresh" && hasAutoRefresh);
-        lvDiv.textContent = hasOwned ? "ON" : ""; // 持っていればON、なければ空欄
+        lvDiv.textContent = hasOwned ? "ON" : "OFF"; // 持っていればON、なければ空欄
       } else if (item.isOneTime) {
         // 任務スキップなどの使い切りアイテムの場合
-        lvDiv.textContent = "パス";
+        lvDiv.textContent = "発動";
       } else {
         // 通常のレベルアップアイテムの場合
         lvDiv.textContent = `Lv.${currentLv}`;
