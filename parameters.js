@@ -77,3 +77,11 @@ const MISSIONS = [
   {  text: "ショップで買い物しろ", type: "shop_action", count: 1, time: 50 },
   {  text: "皿を10個以下で保て",   type: "keep_limit", count: 2,  time: 54 },
 ];
+// 現在再生中のBGMを保持する変数
+let currentBgm = null;
+
+// モードごとのBGMファイルのパスを設定（実際のファイル名に合わせて書き換えてください）
+const bgmList = {
+  normal: "./BGM/BGM.mp3",
+
+};

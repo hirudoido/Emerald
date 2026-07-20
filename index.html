@@ -697,7 +697,7 @@ shopResetCost = 2;
 
   money = 0;
   document.getElementById("money").textContent = money;
-  
+  playBmByMode("normal");
   performReset();
   restartSpawnTimer();
   startGame(); // ここでカウントダウン開始
@@ -1766,7 +1766,27 @@ function completeMission() {
   showMoneyEffect(rect.width / 2,rect.height/2+(rect.top*1.6), "MISSION CLEAR!", 3.5);
   startNewMission(); 
 }
+//BGM
+function playBmByMode(mode) {
+  // 1. すでにBGMが流れている場合は、一旦停止して時間を最初に戻す
+  if (currentBgm) {
+    currentBgm.pause();
+    currentBgm.currentTime = 0;
+  }
 
+  // 2. 指定されたモードのBGMパスが登録されているかチェック
+  if (bgmList[mode]) {
+    // 3. 新しいAudioオブジェクトを作成して再生
+    currentBgm = new Audio(bgmList[mode]);
+    currentBgm.loop = true; // BGMなのでループ再生を有効にする
+    currentBgm.volume = 0.5; // 音量は0.0〜1.0の間で調節（0.5は50%）
+    
+    // ブラウザの仕様（ユーザーが画面をクリックしないと音が流せない）対策をして再生
+    currentBgm.play().catch(error => {
+      console.log("ユーザーのアクションがないため、BGMの自動再生がブロックされました。");
+    });
+  }
+}
 // --- リサイズ処理 ---
 const gameScreen = document.getElementById("gameScreen");
 const resizeHandle = document.getElementById("resizeHandle");
