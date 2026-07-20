@@ -8,7 +8,7 @@ const PARAMS = {
   friction: 0.99,         // 空気抵抗（はじいた後の減速比。1に近づくほど止まらない）
   tossPower: 1.0005,         // はじく強さの倍率
   bounceLimit: -0.1,      // 壁に当たった時の跳ね返り係数
-  gameTime: 10,            // 制限時間（秒）
+  gameTime: 80,            // 制限時間（秒）
 };
 
 // おみくじの種類と報酬の設定
@@ -16,7 +16,7 @@ const PARAMS = {
 //   おみくじの種類・報酬・画像設定
 // ==========================================
 const OMIKUJI_TYPES = {
-  '大吉': { color: '#00ff51', goodPay: 50, badPay: 0,  image: './mikuji/Daikiti.png' },
+  '大吉': { color: '#00ff51', goodPay:100, badPay: 0,  image: './mikuji/Daikiti.png' },
   '吉':   { color: '#e2ff26', goodPay: 30, badPay: 5,  image: './mikuji/Kiti.png' },
   '中吉': { color: '#ff7300', goodPay: 20, badPay: 10, image: './mikuji/Tyukiti.png' },
   '小吉': { color: '#ff0000', goodPay: 10, badPay: 20,  image: './mikuji/Syoukiti.png' },

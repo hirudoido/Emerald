@@ -697,7 +697,7 @@ shopResetCost = 2;
 
   money = 0;
   document.getElementById("money").textContent = money;
-
+  
   performReset();
   restartSpawnTimer();
   startGame(); // ここでカウントダウン開始
@@ -718,21 +718,23 @@ function startGame() {
   // 古いタイマーがあれば確実に消す
   if (gameTimerId) clearInterval(gameTimerId);
 
-
+  
   const timeDisplay = document.getElementById("time");
-
+  
   gameTimerId = setInterval(() => {
+
     if (isEndless) {
       // --- エンドレスモード：ミッション残り時間をカウント ---
       missionTimer--;
+      Riskperiod++;
       timeDisplay.textContent = missionTimer;
-     
+
       if (missionTimer <= 0) {
         clearInterval(gameTimerId);
         endGame("ミッション失敗！");
       }
-       update();
-// 毎秒耐久値を減らす（皿の上にものがある場合）
+      update();
+      // 毎秒耐久値を減らす（皿の上にものがある場合）
     } else {
       // --- 通常モード：60秒からカウントダウン ---
       timeLeft--;
@@ -743,7 +745,7 @@ function startGame() {
         endGame(); // タイムアップ
       }
     }
-  },1000||Math.max(100, 1000-(missionDifficultyMultiplier-1)*25));
+  },1000||Math.max(50, 1000-(missionDifficultyMultiplier-1)*25-Riskperiod));
 
 
 }
@@ -1017,6 +1019,7 @@ function spawnOmikuji() {
 // --- 良い・悪いゾーンの判定 ---
 // ゾーンを横揺れさせる関数
 function shakeZone(zoneId) {
+
   const zone = document.getElementById(zoneId);
   if (!zone) return;
 
@@ -1079,7 +1082,8 @@ if (isEndless && hasAutoTimer) {
     moneyBufferForTimer %= 30; // 余りを次に持ち越す
     //console.log(`秒数が増えました：${extraSeconds}秒`);
     // 秒数が増えた演出（任意）
-    showMoneyEffect(window.innerWidth / 2, 5, `+${extraSeconds}s`, 250);
+      const rect =  document.getElementById('info').getBoundingClientRect();
+    showMoneyEffect(rect.width / 2, rect.height, `+${extraSeconds}s`, 3);
   }
 }
     // --- ここがポイント：スコア加算 ---
@@ -1153,7 +1157,7 @@ if (isEndless && hasAutoTimer) {
     // エフェクト表示と削除
     const relativeX = rect.left - gameRect.left + (rect.width / 2);
     const relativeY = rect.top - gameRect.top;
-    const fontSize = Math.min(50, 10 + (finalPay / 777) * 100);
+    const fontSize = Math.min(10, 2 + (finalPay / 777) * 80);
     showMoneyEffect(relativeX, relativeY, finalPay, fontSize);
 
     omikuji.remove();
@@ -1171,10 +1175,10 @@ function showMoneyEffect(x, y, amount, size) {
   effect.style.position = "absolute";
   effect.style.left = x + "px";
   effect.style.top = y + "px";
-  effect.style.fontSize = size + "px"; // 動的なサイズ適用
+  effect.style.fontSize = size + "vh"; // 動的なサイズ適用
   
   // 金額が大きいほど色を豪華にする演出（オプション）
-  if (amount >= 777) {
+  if (amount >= 100) {
     effect.style.color = "#7fffd4"; // ラッキーセブンは特別色
     effect.style.textShadow = "0 0 10px #fff, 0 0 20px #ff00ff";
   } else {
@@ -1351,7 +1355,7 @@ function updateShopVisuals() {
     const activeButtons = document.querySelectorAll('.item-slot:not(.sold-out)');
     //console.log(activeButtons);
     if (activeButtons.length === 0) {
-      setTimeout(() => attemptReset(), 500); // 0.5秒後に自動更新
+      setTimeout(() => attemptReset(), 200); // 0.5秒後に自動更新
     }
   }
 }
@@ -1556,7 +1560,7 @@ function update() {
       stillFrames++;
       omikuji.dataset.stillFrames = stillFrames;
 
-      if (stillFrames > 3) {
+      if (stillFrames > 4) {
         omikuji.classList.add("on-plate");
       }
     } else {
@@ -1583,7 +1587,7 @@ function calculateDurability() {
   // 1つ以上乗っているなら耐久力を減らす
   if (count > 0) {
     // 減少スピードを調整（必要に応じて数値を変更）
-    durability -= count * 0.4;
+    durability -= count * 0.6;
 
     if (durability <= 0) {
       durability = 0;
@@ -1700,7 +1704,7 @@ console.log("スコア", missionCompletedCount, "難易度", currentMission.coun
 //
   missionProgress = 0;
   missionTimer = selected.time;
-  
+     Riskperiod=0;
 
   keepTimer = 0;       // タイマーリセット（これを追加）
 
@@ -1758,7 +1762,8 @@ function completeMission() {
   // 画面の数値を更新
   document.getElementById("score").textContent = missionCompletedCount;
   // ミッションクリアのエフェクト
-  showMoneyEffect(window.innerWidth/2, window.innerHeight/2, "MISSION CLEAR!", 40);
+      const rect =  document.getElementById('info').getBoundingClientRect();
+  showMoneyEffect(rect.width / 2,rect.height/2+(rect.top*1.6), "MISSION CLEAR!", 3.5);
   startNewMission(); 
 }
 
