@@ -686,7 +686,7 @@ shopResetCost = 2;
     RealtimeId =setInterval(() => {checkKeepMission();Realtime++},1000);
     initEndlessMode(); // ミッションと耐久力をセット
   } else {
-
+missionDifficultyMultiplier = 1;Riskperiod=0;
     ui.missionUI.style.display = "none";
     ui.scoreLabel.textContent = "入れた数";
     score = 0;
@@ -726,14 +726,16 @@ function startGame() {
     if (isEndless) {
       // --- エンドレスモード：ミッション残り時間をカウント ---
       missionTimer--;
-      Riskperiod++;
+      Riskperiod+=2;
       timeDisplay.textContent = missionTimer;
+      console.log("残り時間",Math.max(50, 1000-(missionDifficultyMultiplier-1)*25-Riskperiod));
 
       if (missionTimer <= 0) {
         clearInterval(gameTimerId);
         endGame("ミッション失敗！");
       }
       update();
+      startGame();// カウントダウン開始
       // 毎秒耐久値を減らす（皿の上にものがある場合）
     } else {
       // --- 通常モード：60秒からカウントダウン ---
@@ -745,7 +747,7 @@ function startGame() {
         endGame(); // タイムアップ
       }
     }
-  },1000||Math.max(50, 1000-(missionDifficultyMultiplier-1)*25-Riskperiod));
+  },Math.max(50, 1000-(missionDifficultyMultiplier-1)*25-Riskperiod)||1000);
 
 
 }
@@ -1678,7 +1680,7 @@ function startNewMission() {
       [availableMissions[i], availableMissions[j]] = [availableMissions[j], availableMissions[i]];
     }
     missionDifficultyMultiplier += 1;
-     startGame();// カウントダウン開始
+
     console.log("シャッフル", missionDifficultyMultiplier);
   }
 
