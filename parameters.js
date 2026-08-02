@@ -104,4 +104,5 @@ const seList = {
   monney: "./BGM/決定ボタンを押す44.mp3",
   mission: "./BGM/決定ボタンを押す49.mp3",
     end: "./BGM/ドアを開ける2.mp3",
+        oto: "./BGM/oto.wav",
 };

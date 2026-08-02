@@ -1270,6 +1270,7 @@ let currentItems = [];
 
 // ボタンが押された時の専用関数を作ると分かりやすいです
 function attemptReset() {
+  playSEByMode("oto");
   if (money >= shopResetCost) {
     money -= shopResetCost;
     shopResetCost += 3; // 次回コストを+3円
