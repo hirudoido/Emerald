@@ -19,7 +19,19 @@ body {
   position: fixed;  /* スマホのバウンス禁止  */
   touch-action: none; /* ブラウザ操作を無効化  */
 }
+h2 {
+  font-size: clamp(16px, 3.5vh, 100px);
+  display: flex;
+  align-items: center;
+      justify-content: center;
+  color: #000000;
+    text-shadow:12px 13px 5px#8a8a8a;
+       gap: 20px;
+position: relative; /* 今の位置を基準 */
+top: 30px; /* 上から10px */
 
+
+  }
 /* --- 2. ゲーム画面の比率固定 --- */
 #gameScreen {
   position: relative;
@@ -578,6 +590,7 @@ body {
 
   <div id="modeSelect">
     <div class="menu-container">
+      <h2>おみくじ仕分け</h2>
       <button id="endlessBtn" class="menu-btn">エンドレス</button>
       <button id="startBtn" class="menu-btn">スタート</button>
       <button class="menu-btn">今はなし</button>
@@ -695,9 +708,10 @@ missionDifficultyMultiplier = 1;Riskperiod=0;
       document.getElementById("time").textContent = timeLeft;
   }
 
+  (isEndless) ? playBmByMode("endless"):  playBmByMode("normal");
   money = 0;
   document.getElementById("money").textContent = money;
-  playBmByMode("normal");
+
   performReset();
   restartSpawnTimer();
   startGame(); // ここでカウントダウン開始
@@ -763,6 +777,9 @@ function endGame(reason) {
     gameTimerId = null;
   }
   if (RealtimeId) clearInterval(RealtimeId);
+//BGM
+stopBgm();
+playSEByMode("end") ;
 // --- 皿の見た目をリセット ---
 durability = 100; // 耐久値リセット
   const plate = document.getElementById("plate");
@@ -822,7 +839,7 @@ if (isEndless) {
       document.getElementById("time").textContent = timeLeft;
   // ショップをまっさらな状態で補充
   performReset();
-  
+    (isEndless) ? playBmByMode("endless"):  playBmByMode("normal");
   // ゲーム開始
     if (RealtimeId) clearInterval(RealtimeId);
     if (isEndless) RealtimeId =setInterval(() => {checkKeepMission();Realtime++},1000);
@@ -1160,6 +1177,7 @@ if (isEndless && hasAutoTimer) {
     const relativeX = rect.left - gameRect.left + (rect.width / 2);
     const relativeY = rect.top - gameRect.top;
     const fontSize = Math.min(10, 2 + (finalPay / 777) * 80);
+    playSEByMode("monney");
     showMoneyEffect(relativeX, relativeY, finalPay, fontSize);
 
     omikuji.remove();
@@ -1764,6 +1782,7 @@ function completeMission() {
   // 画面の数値を更新
   document.getElementById("score").textContent = missionCompletedCount;
   // ミッションクリアのエフェクト
+  playSEByMode("mission");
       const rect =  document.getElementById('info').getBoundingClientRect();
   showMoneyEffect(rect.width / 2,rect.height/2+(rect.top*1.6), "MISSION CLEAR!", 3.5);
   startNewMission(); 
@@ -1787,6 +1806,35 @@ function playBmByMode(mode) {
     currentBgm.play().catch(error => {
       console.log("ユーザーのアクションがないため、BGMの自動再生がブロックされました。");
     });
+  }
+}
+function stopBgm() {
+  if (currentBgm) {
+    currentBgm.pause();
+    currentBgm.currentTime = 0; // 曲の再生位置を最初（0秒）に戻す
+  }
+}
+//SE
+function playSEByMode(mode) {
+  // 1. すでにBGMが流れている場合は、一旦停止して時間を最初に戻す
+
+  // 2. 指定されたモードのBGMパスが登録されているかチェック
+  if (seList[mode]) {
+    // 3. 新しいAudioオブジェクトを作成して再生
+    currentSE = new Audio(seList[mode]);
+    currentSE.loop = false; // BGMなのでループ再生を有効にする
+    currentSE.volume = 0.5; // 音量は0.0〜1.0の間で調節（0.5は50%）
+    
+    // ブラウザの仕様（ユーザーが画面をクリックしないと音が流せない）対策をして再生
+    currentSE.play().catch(error => {
+      console.log("ユーザーのアクションがないため、BGMの自動再生がブロックされました。");
+    });
+  }
+}
+function stopSE() {
+  if (currentSE) {
+    currentSE.pause();
+    currentSE.currentTime = 0; // 曲の再生位置を最初（0秒）に戻す
   }
 }
 // --- リサイズ処理 ---
@@ -1834,6 +1882,51 @@ window.addEventListener("touchmove", doResize, { passive: false });
 
 window.addEventListener("mouseup", stopResize);
 window.addEventListener("touchend", stopResize);
+// 読み込み完了した画像を保持しておくオブジェクト（キャッシュ）
+const imageCache = {};
+
+// 2. 事前ロード処理を実行する関数
+function preloadImages(paths, callback) {
+  let loadedCount = 0;
+  const totalImages = paths.length;
+
+  if (totalImages === 0) {
+    callback();
+    return;
+  }
+
+  paths.forEach(path => {
+    const img = new Image();
+    img.src = path;
+    
+    // 画像の読み込みが完了した時の処理
+    img.onload = () => {
+      loadedCount++;
+      imageCache[path] = img; // キャッシュに保存
+
+      // すべての画像の読み込みが終わったらcallbackを実行
+      if (loadedCount === totalImages) {
+        console.log("すべての画像の事前ロードが完了しました！");
+        if (callback) callback();
+      }
+    };
+
+    // 万が一読み込みに失敗した時のエラーハンドリング
+    img.onerror = () => {
+      console.error(`画像の読み込みに失敗しました: ${path}`);
+      loadedCount++;
+      if (loadedCount === totalImages && callback) callback();
+    };
+  });
+}
+// ページ読み込み時に画像をあらかじめ準備する
+window.addEventListener("DOMContentLoaded", () => {
+  // 画像のロードを開始し、終わったら「スタートボタンを有効化」などの処理をする
+  preloadImages(imagePaths, () => {
+    console.log("ゲームの準備が整いました");
+    // 例: スタートボタンを押せるようにする、スタート画面を描画するなど
+  });
+});
 </script>
 
 </body>

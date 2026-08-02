@@ -8,7 +8,7 @@ const PARAMS = {
   friction: 0.99,         // 空気抵抗（はじいた後の減速比。1に近づくほど止まらない）
   tossPower: 1.0005,         // はじく強さの倍率
   bounceLimit: -0.1,      // 壁に当たった時の跳ね返り係数
-  gameTime: 80,            // 制限時間（秒）
+  gameTime: 5,            // 制限時間（秒）
 };
 
 // おみくじの種類と報酬の設定
@@ -77,11 +77,31 @@ const MISSIONS = [
   {  text: "ショップで買い物しろ", type: "shop_action", count: 1, time: 50 },
   {  text: "皿を10個以下で保て",   type: "keep_limit", count: 2,  time: 54 },
 ];
+// 1. ゲームで使う画像を一覧にする
+const imagePaths = [
+  "./mikuji/Zouka.png",
+  "./mikuji/Daikiti.png",
+  "./mikuji/Entyou.png",
+ "./mikuji/Gensyo.png",
+ "./mikuji/Hoju.png",
+ "./mikuji/Kansui.png",
+ "./mikuji/Kin.png",
+ "./mikuji/Kyou.png",
+ "./mikuji/Kiti.png",
+ "./mikuji/Syoukiti.png",
+ "./mikuji/Tyukiti.png",
+ "./mikuji/Suekiti.png",
+];
 // 現在再生中のBGMを保持する変数
 let currentBgm = null;
-
+let currentSE = null;
 // モードごとのBGMファイルのパスを設定（実際のファイル名に合わせて書き換えてください）
 const bgmList = {
   normal: "./BGM/BGM.mp3",
-
+  endless: "./BGM/BGM2.m4a",
+};
+const seList = {
+  monney: "./BGM/決定ボタンを押す44.mp3",
+  mission: "./BGM/決定ボタンを押す49.mp3",
+    end: "./BGM/ドアを開ける2.mp3",
 };
