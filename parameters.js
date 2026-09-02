@@ -91,6 +91,7 @@ const imagePaths = [
  "./mikuji/Syoukiti.png",
  "./mikuji/Tyukiti.png",
  "./mikuji/Suekiti.png",
+
 ];
 // 現在再生中のBGMを保持する変数
 let currentBgm = null;
@@ -101,7 +102,8 @@ const bgmList = {
   endless: "./BGM/BGM2.m4a",
 };
 const seList = {
-  monney: "./BGM/決定ボタンを押す44.mp3",
+  money1: "./BGM/お金1.wav",
+  money2: "./BGM/お金2.wav",
   mission: "./BGM/決定ボタンを押す49.mp3",
     end: "./BGM/ドアを開ける2.mp3",
         oto: "./BGM/oto.wav",

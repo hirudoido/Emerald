@@ -1177,7 +1177,7 @@ if (isEndless && hasAutoTimer) {
     const relativeX = rect.left - gameRect.left + (rect.width / 2);
     const relativeY = rect.top - gameRect.top;
     const fontSize = Math.min(10, 2 + (finalPay / 777) * 80);
-    playSEByMode("monney");
+    if (finalPay < 20) {playSEByMode("money1");}else{playSEByMode("money2");}
     showMoneyEffect(relativeX, relativeY, finalPay, fontSize);
 
     omikuji.remove();
@@ -1824,7 +1824,7 @@ function playSEByMode(mode) {
     // 3. 新しいAudioオブジェクトを作成して再生
     currentSE = new Audio(seList[mode]);
     currentSE.loop = false; // BGMなのでループ再生を有効にする
-    currentSE.volume = 0.5; // 音量は0.0〜1.0の間で調節（0.5は50%）
+    currentSE.volume = 0.3; // 音量は0.0〜1.0の間で調節（0.5は50%）
     
     // ブラウザの仕様（ユーザーが画面をクリックしないと音が流せない）対策をして再生
     currentSE.play().catch(error => {
