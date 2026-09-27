@@ -104,7 +104,7 @@ const bgmList = {
 const seList = {
   money1: "./BGM/お金1.wav",
   money2: "./BGM/お金2.wav",
-  mission: "./BGM/決定ボタンを押す49.mp3",
+  mission: "./BGM/そこまで.wav",
     end: "./BGM/ドアを開ける2.mp3",
         oto: "./BGM/oto.wav",
 };
